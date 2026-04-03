@@ -1,58 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camera Test</title>
     <!-- Native unstyled layout for simple testing -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
+
 <body>
-    <h2>Simple Phone Camera Feed Test</h2>
-    <p>Click "Start Camera" and grant permissions to see the camera feed. It attempts to load the back camera by default.</p>
-    
+    <h2>Simple Phone Camera Feed Test (html5-qrcode Scanner)</h2>
+    <p>Click "Start Camera" and grant permissions. Point it at a Manga/Book barcode.</p>
+
     <div>
         <button id="startButton">Start Camera</button>
         <button id="stopButton">Stop Camera</button>
     </div>
-    
+
     <div id="errorMessage" style="color: red; margin-top: 10px;"></div>
-    
-    <video id="videoFeed" autoplay playsinline style="max-width: 100%; border: 1px solid #333; margin-top: 15px;"></video>
+
+    <strong>Scanned ISBN/Barcode:</strong> <span id="scanResult" style="color: green; font-size: 1.2em;">Nothing
+        yet...</span>
+
+    <br>
+    <!-- The html5-qrcode library will automatically inject the video feed here -->
+    <div id="reader" style="width: 100%; max-width: 600px; margin-top: 15px;"></div>
 
     <script>
-        const videoElement = document.getElementById('videoFeed');
         const startBtn = document.getElementById('startButton');
         const stopBtn = document.getElementById('stopButton');
         const errorDisplay = document.getElementById('errorMessage');
-        let stream = null;
+        const scanResult = document.getElementById('scanResult');
 
-        startBtn.addEventListener('click', async () => {
+        let html5QrCode = null;
+
+        startBtn.addEventListener('click', () => {
             errorDisplay.innerText = ''; // Reset error
-            
-            try {
-                // Request the back camera (environment) if possible
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "environment" 
-                    },
-                    audio: false
-                });
-                
-                videoElement.srcObject = stream;
-            } catch (err) {
-                console.error("Camera access failed:", err);
-                errorDisplay.innerText = "Failed to access camera: " + err.message;
+            scanResult.innerText = "Scanning...";
+
+            // Initialize the scanner on the 'reader' div
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
             }
+
+            // Try to start the back camera (environment)
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,    // Check 10 frames per second
+                    qrbox: { width: 250, height: 100 },  // Bounding box for barcodes (wide format is better for 1D barcodes like EAN)
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.QR_CODE
+                    ]
+                },
+                // Success callback
+                (decodedText, decodedResult) => {
+                    scanResult.innerText = decodedText;
+                    if ("vibrate" in navigator) navigator.vibrate(50); // Optional vibration feedback
+                },
+                // Error callback (ignoring as it fires continuously when no code is found)
+                (errorMessage) => {
+                    // console.log("Scanning...", errorMessage);
+                }
+            ).catch((err) => {
+                console.error("Camera start failed:", err);
+                errorDisplay.innerText = "Failed to start camera: " + err;
+            });
         });
 
         stopBtn.addEventListener('click', () => {
-            if (stream) {
-                // Stop all tracks (video) attached to the stream
-                stream.getTracks().forEach(track => track.stop());
-                videoElement.srcObject = null;
-                stream = null;
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    scanResult.innerText = "Stopped.";
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                }).catch((err) => {
+                    console.error("Failed to stop camera:", err);
+                });
             }
         });
     </script>
 </body>
+
 </html>
