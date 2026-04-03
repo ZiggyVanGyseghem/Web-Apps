@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Test</title>
+    <!-- Native unstyled layout for simple testing -->
+</head>
+<body>
+    <h2>Simple Phone Camera Feed Test</h2>
+    <p>Click "Start Camera" and grant permissions to see the camera feed. It attempts to load the back camera by default.</p>
+    
+    <div>
+        <button id="startButton">Start Camera</button>
+        <button id="stopButton">Stop Camera</button>
+    </div>
+    
+    <div id="errorMessage" style="color: red; margin-top: 10px;"></div>
+    
+    <video id="videoFeed" autoplay playsinline style="max-width: 100%; border: 1px solid #333; margin-top: 15px;"></video>
+
+    <script>
+        const videoElement = document.getElementById('videoFeed');
+        const startBtn = document.getElementById('startButton');
+        const stopBtn = document.getElementById('stopButton');
+        const errorDisplay = document.getElementById('errorMessage');
+        let stream = null;
+
+        startBtn.addEventListener('click', async () => {
+            errorDisplay.innerText = ''; // Reset error
+            
+            try {
+                // Request the back camera (environment) if possible
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment" 
+                    },
+                    audio: false
+                });
+                
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.error("Camera access failed:", err);
+                errorDisplay.innerText = "Failed to access camera: " + err.message;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (stream) {
+                // Stop all tracks (video) attached to the stream
+                stream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                stream = null;
+            }
+        });
+    </script>
+</body>
+</html>
