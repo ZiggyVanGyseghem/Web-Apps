@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibration Test</title>
+</head>
+<body>
+    <h2>Simple Phone Vibration Test</h2>
+    <p>Test the hardware actuator (vibration motor). Note: This only works on physical mobile devices, and may require the device not to be in silent mode depending on the OS.</p>
+    
+    <div>
+        <button id="singleVibeBtn">Single Short Vibrate (200ms)</button>
+        <br><br>
+        <button id="patternVibeBtn">Vibration Pattern (SOS)</button>
+        <br><br>
+        <button id="stopVibeBtn">Stop Vibration</button>
+    </div>
+    
+    <div id="statusMessage" style="color: blue; margin-top: 15px;"></div>
+
+    <script>
+        const singleBtn = document.getElementById('singleVibeBtn');
+        const patternBtn = document.getElementById('patternVibeBtn');
+        const stopBtn = document.getElementById('stopVibeBtn');
+        const statusDisplay = document.getElementById('statusMessage');
+
+        // Check if the browser supports the Vibration API
+        if (!("vibrate" in navigator)) {
+            statusDisplay.style.color = "red";
+            statusDisplay.innerText = "Vibration API is not supported in this browser/device.";
+        } else {
+            statusDisplay.innerText = "Vibration API is supported!";
+        }
+
+        singleBtn.addEventListener('click', () => {
+            if ("vibrate" in navigator) {
+                // Vibrate for 200ms
+                navigator.vibrate(200);
+                statusDisplay.innerText = "Buzz! (200ms)";
+            }
+        });
+
+        patternBtn.addEventListener('click', () => {
+            if ("vibrate" in navigator) {
+                // Vibrate pattern: on, off, on, off... (SOS approx)
+                navigator.vibrate([100, 50, 100, 50, 100, 200, 300, 50, 300, 50, 300, 200, 100, 50, 100, 50, 100]);
+                statusDisplay.innerText = "Playing pattern...";
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if ("vibrate" in navigator) {
+                // Passing 0 or an empty array stops current vibration
+                navigator.vibrate(0);
+                statusDisplay.innerText = "Vibration stopped.";
+            }
+        });
+    </script>
+</body>
+</html>
