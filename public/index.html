@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anime Tracker | Seasonal Anime Countdown</title>
     <meta name="description" content="Track your favorite seasonal anime and countdown to the next episode drop.">
+    <meta name="theme-color" content="#8a2be2">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +24,7 @@
             </a>
             <nav class="main-nav">
                 <a href="index.html" class="active"><i class="fas fa-home"></i> <span>Home</span></a>
-                <a href="#"><i class="fas fa-list"></i> <span>My Watchlist</span></a>
+                <a href="library.html"><i class="fas fa-book-open"></i> <span>My Library</span></a>
                 <a href="camera.html"><i class="fas fa-camera"></i> <span>Scanner</span></a>
                 <a href="#"><i class="fas fa-compass"></i> <span>Browse</span></a>
                 <a href="#"><i class="fas fa-user"></i> <span>Profile</span></a>
@@ -33,22 +35,22 @@
         </div>
     </header>
 
-    <main class="container main-content">
-        <section class="hero">
+    <main class="container main-content" style="padding-top: 2rem;">
+        <section class="hero" style="margin-top: 1rem; padding: 2rem 1rem;">
             <h1>Track Your <span class="highlight">Anime</span> Instantly</h1>
             <p>Never miss an episode. Live countdowns to the next drop, notifications, and offline access.</p>
             <button class="btn btn-primary" id="demo-notification-btn">Enable Notifications</button>
         </section>
 
-        <section class="watchlist">
-            <h2><i class="fa-solid fa-fire"></i> Currently Airing</h2>
+        <section class="watchlist" style="margin-bottom: 3rem;">
+            <h2><i class="fa-solid fa-tv"></i> Airing Anime</h2>
             <div class="anime-grid" id="anime-grid">
                 <!-- Cards will be populated by JS -->
             </div>
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker | Camera Scanner</title>
+    <meta name="description" content="Scan barcodes to add items to your watchlist.">
+    <meta name="theme-color" content="#8a2be2">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script type="module" src="app.js"></script>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fa-solid fa-play"></i>
+                <span>AnimeTrack</span>
+            </a>
+            <nav class="main-nav">
+                <a href="index.html"><i class="fas fa-home"></i> <span>Home</span></a>
+                <a href="library.html"><i class="fas fa-book-open"></i> <span>My Library</span></a>
+                <a href="camera.html" class="active"><i class="fas fa-camera"></i> <span>Scanner</span></a>
+                <a href="#"><i class="fas fa-compass"></i> <span>Browse</span></a>
+                <a href="#"><i class="fas fa-user"></i> <span>Profile</span></a>
+            </nav>
+            <button class="menu-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container main-content" style="padding-top: 2rem;">
+        <section class="hero" style="margin-top: 1rem; padding: 2rem 1rem;">
+        <div class="scanner-container">
+            <h2><i class="fa-solid fa-barcode highlight"></i> Barcode Scanner</h2>
+            <p>Scan a manga or novel's ISBN barcode to automatically fetch details.</p>
+            
+            <div style="margin: 1.5rem 0;">
+                <button class="btn btn-primary" id="startButton">Start Camera</button>
+                <button class="btn" id="stopButton" style="background: rgba(255,255,255,0.1); margin-left: 10px;">Stop</button>
+            </div>
+            
+            <div id="errorMessage" style="color: #ff4d4d; margin-top: 10px; font-weight: 600;"></div>
+            
+            <div style="background: rgba(138, 43, 226, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(138, 43, 226, 0.3); margin: 1.5rem auto; max-width: 600px;">
+                <strong>Scanned ISBN:</strong> <span id="scanResult" style="color: #4cc9f0; font-family: monospace; font-size: 1.2rem; font-weight: bold; margin-left: 10px;">Waiting...</span>
+                <div id="bookDetails" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+
+            <div id="reader" style="width: 100%; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></div>
+
+            <!-- SERIES CONFIRMATION MODAL -->
+            <div id="seriesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center;">
+                <div style="background: #1a1a24; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #8a2be2;">
+                    <h3 style="margin-top: 0; color: white;">Confirm Library Details</h3>
+                    <p style="color: #9aa0a6; font-size: 0.9rem; margin-bottom: 1.5rem;">Group your scan into a series.</p>
+                    
+                    <div style="margin-top: 1rem;">
+                        <label style="display: block; margin-bottom: 5px; color: #9aa0a6;">Master Series Name</label>
+                        <input type="text" id="modalSeriesName" style="width: 100%; padding: 0.8rem; border-radius: 6px; background: #2a2a35; color: white; border: 1px solid #444;" placeholder="e.g. Naruto">
+                    </div>
+                    
+                    <div style="margin-top: 1rem;">
+                        <label style="display: block; margin-bottom: 5px; color: #9aa0a6;">Item Type</label>
+                        <select id="modalItemType" style="width: 100%; padding: 0.8rem; border-radius: 6px; background: #2a2a35; color: white; border: 1px solid #444;">
+                            <option value="manga">Manga</option>
+                            <option value="novel">Light Novel</option>
+                            <option value="book">Standard Book</option>
+                            <option value="anime">Anime DVD/Blu-ray</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-top: 1rem;">
+                        <label style="display: block; margin-bottom: 5px; color: #9aa0a6;">Scanned Volume Name</label>
+                        <input type="text" id="modalVolumeName" style="width: 100%; padding: 0.8rem; border-radius: 6px; background: #111; color: #777; border: 1px solid #333;" disabled>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; display: flex; gap: 10px;">
+                        <button id="modalSaveBtn" class="btn btn-primary" style="flex: 1;">Save to Series</button>
+                        <button id="modalCancelBtn" class="btn" style="flex: 1; background: rgba(255,255,255,0.1);">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        </section>
+    </main>
+
+    <script>
+        const startBtn = document.getElementById('startButton');
+        const stopBtn = document.getElementById('stopButton');
+        const errorDisplay = document.getElementById('errorMessage');
+        const scanResult = document.getElementById('scanResult');
+        const bookDetails = document.getElementById('bookDetails');
+        
+        // Modal Elements
+        const seriesModal = document.getElementById('seriesModal');
+        const modalSeriesName = document.getElementById('modalSeriesName');
+        const modalItemType = document.getElementById('modalItemType');
+        const modalVolumeName = document.getElementById('modalVolumeName');
+        const modalSaveBtn = document.getElementById('modalSaveBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        
+        let html5QrCode = null;
+        let lastScannedCode = null;
+        let currentScannedItem = null;
+
+        // Audio Beep for iOS/Samsung cross-compatibility
+        function playBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz beep
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // 10% volume
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15); // play for 150ms
+            } catch(e) { console.log('Audio error:', e); }
+        }
+
+        // Extremely naive series name extractor (e.g. "Naruto Vol 43" -> "Naruto")
+        function guessSeriesName(title) {
+            let guess = title.split(/Vol|Volume|Book|Part|Chapter|Issue|#|-/i)[0].trim();
+            if (guess.length === 0) guess = title;
+            return guess;
+        }
+
+        startBtn.addEventListener('click', () => {
+            errorDisplay.innerText = ''; 
+            scanResult.innerText = "Scanning...";
+            bookDetails.innerHTML = '';
+            lastScannedCode = null;
+            
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 100 },
+                    formatsToSupport: [ 
+                        Html5QrcodeSupportedFormats.EAN_13, 
+                        Html5QrcodeSupportedFormats.EAN_8, 
+                        Html5QrcodeSupportedFormats.UPC_A, 
+                        Html5QrcodeSupportedFormats.UPC_E
+                    ]
+                },
+                (decodedText, decodedResult) => {
+                    // Prevent duplicate fetches for the same barcode while it's in frame
+                    if (lastScannedCode === decodedText) return;
+                    lastScannedCode = decodedText;
+                    
+                    scanResult.innerText = decodedText;
+                    
+                    // Trigger haptic & audio feedback
+                    if ("vibrate" in navigator) navigator.vibrate(50);
+                    playBeep();
+                    
+                    // Fetch data from OpenLibrary API
+                    bookDetails.innerHTML = "<p>Searching OpenLibrary Database for details...</p>";
+                    
+                    fetch(\`https://openlibrary.org/api/books?bibkeys=ISBN:\${decodedText}&format=json&jscmd=data\`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const bookKey = \`ISBN:\${decodedText}\`;
+                            if (data[bookKey]) {
+                                const bookInfo = data[bookKey];
+                                const title = bookInfo.title || 'Unknown Title';
+                                const authors = bookInfo.authors ? bookInfo.authors.map(a => a.name).join(', ') : 'Unknown Author';
+                                const cover = bookInfo.cover ? bookInfo.cover.medium : '';
+                                const categories = bookInfo.subjects ? bookInfo.subjects[0].name : 'Category not listed';
+                                
+                                let infoHtml = \`
+                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                        <h3 style="color: #fff; margin-bottom: 5px;">\${title}</h3>
+                                        <p style="color: #9aa0a6; margin-bottom: 5px;">By \${authors}</p>
+                                        <p style="font-size: 0.8em; color: #8a2be2; margin-bottom: 15px;">\${categories}</p>
+                                        <button class="btn btn-primary" id="addWatchlistBtn" style="padding: 0.5rem 1rem; font-size: 0.9em;">Add to Library</button>
+                                    </div>
+                                \`;
+                                
+                                if (cover) {
+                                    infoHtml = \`<img src="\${cover}" alt="Book Cover" style="max-height: 150px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">\` + infoHtml;
+                                }
+                                
+                                bookDetails.innerHTML = infoHtml;
+                                
+                                // Wire up the Add button
+                                document.getElementById('addWatchlistBtn').addEventListener('click', () => {
+                                    // Pause scanner and open modal
+                                    if (html5QrCode.getState() === 2) html5QrCode.pause();
+                                    
+                                    currentScannedItem = {
+                                        volumeId: decodedText,
+                                        volumeTitle: title,
+                                        author: authors,
+                                        category: categories,
+                                        cover: cover
+                                    };
+                                    
+                                    modalSeriesName.value = guessSeriesName(title);
+                                    modalVolumeName.value = title;
+                                    seriesModal.style.display = "flex";
+                                });
+                            } else {
+                                bookDetails.innerHTML = "<p style='color: #ffb703;'>No book/manga found for this barcode in OpenLibrary.</p>";
+                                lastScannedCode = null; // allow re-scan
+                            }
+                        })
+                        .catch(err => {
+                            console.error("API Fetch Error:", err);
+                            bookDetails.innerHTML = "<p style='color: #ff4d4d;'>Failed to connect to API.</p>";
+                            lastScannedCode = null;
+                        });
+                },
+                (errorMessage) => {
+                    // Ignore background errors while scanning
+                }
+            ).catch((err) => {
+                console.error("Camera start failed:", err);
+                errorDisplay.innerText = "Failed to start camera: " + err;
+            });
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    scanResult.innerText = "Stopped.";
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                    lastScannedCode = null;
+                }).catch((err) => {
+                    console.error("Failed to stop camera:", err);
+                });
+            }
+        });
+
+        // Modal Logic
+        modalCancelBtn.addEventListener('click', () => {
+            seriesModal.style.display = "none";
+            if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume(); // resume if paused
+        });
+
+        modalSaveBtn.addEventListener('click', async () => {
+            if (!currentScannedItem) return;
+            
+            modalSaveBtn.innerText = "Saving...";
+            modalSaveBtn.disabled = true;
+            
+            currentScannedItem.seriesName = modalSeriesName.value.trim() || currentScannedItem.volumeTitle;
+            currentScannedItem.type = modalItemType.value;
+            
+            const saved = await window.saveToWatchlist(currentScannedItem);
+            
+            const btn = document.getElementById('addWatchlistBtn');
+            if (saved) {
+                btn.innerText = "Added to Series!";
+                btn.style.background = "#28a745";
+            } else {
+                btn.innerText = "Already in Series";
+                btn.style.background = "#6c757d";
+            }
+            
+            seriesModal.style.display = "none";
+            modalSaveBtn.innerText = "Save to Series";
+            modalSaveBtn.disabled = false;
+            
+            if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
+        });
+    </script>
+</body>
+
+</html>

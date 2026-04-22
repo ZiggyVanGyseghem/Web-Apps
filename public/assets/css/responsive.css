@@ -1,0 +1,558 @@
+/* Mobile-friendly responsive CSS additions */
+
+/* Mobile menu toggle button - always hidden on desktop */
+.mobile-menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Add a nicer hover effect for mobile menu toggle */
+.mobile-menu-toggle:hover, 
+.mobile-menu-toggle:focus {
+  background-color: rgba(255,255,255,0.1);
+  outline: none;
+}
+
+/* Header flex applied only on mobile screens */
+/* Ensure desktop header maintains its original layout */
+@media (min-width: 769px) {
+  .header-flex {
+    display: none;
+  }
+  
+  header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Header flex for logo and toggle button */
+@media (max-width: 768px) {
+  .header-flex {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* User menu styling updates - ensure consistent behavior across devices */
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-menu-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--light);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem; /* Slightly smaller font */
+  padding: 0.4rem 0.7rem; /* Reduced padding to match nav links */
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.user-menu-toggle:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.user-menu-toggle .fa-caret-down {
+  font-size: 0.8rem;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+  min-width: 160px;
+  margin-top: 0.5rem;
+  display: none;
+  z-index: 100;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-menu a {
+  color: #333 !important;
+  padding: 0.75rem 1rem;
+  display: block;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.dropdown-menu a:last-child {
+  border-bottom: none;
+}
+
+/* Mobile menu transitions - only apply on mobile screens */
+@media (max-width: 768px) {
+  /* Mobile menu transitions */
+  header .main-nav {
+    transition: all 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+    display: none;
+    width: 100%;
+    flex-direction: column;
+  }
+
+  header .main-nav.show {
+    max-height: 500px;
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  header .main-nav {
+    display: flex;
+    max-height: none;
+    overflow: visible;
+    flex-direction: row;
+    gap: 1.2rem; /* Match the desktop layout */
+  }
+  
+  .mobile-menu-toggle {
+    display: none;
+  }
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  /* Full width header flex container on mobile */
+  .header-flex {
+    width: 100%;
+  }
+  
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: block;
+  }
+    /* Change navigation layout for mobile */
+  .main-nav {
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 1rem;
+  }
+  
+  .main-nav a, .main-nav .user-menu {
+    width: 100%;
+    text-align: left;
+    padding: 0.85rem 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .main-nav a:hover {
+    background-color: rgba(255,255,255,0.05);
+  }
+  
+  .main-nav a:active {
+    background-color: rgba(255,255,255,0.15);
+  }
+  
+  .user-menu {
+    width: 100%;
+  }
+  
+  .user-menu-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .dropdown-menu {
+    position: relative;
+    width: 100%;
+    box-shadow: none;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0;
+    background-color: rgba(0,0,0,0.2);
+  }
+  
+  .dropdown-menu a {
+    padding-left: 2rem;
+    color: white !important;
+    border-bottom-color: rgba(255,255,255,0.1);
+  }
+  
+  /* Add a subtle animation for menu items */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .main-nav.show a, .main-nav.show .user-menu {
+    animation: fadeIn 0.3s ease forwards;
+  }
+  
+  .main-nav.show a:nth-child(2) { animation-delay: 0.05s; }
+  .main-nav.show a:nth-child(3) { animation-delay: 0.1s; }
+  .main-nav.show a:nth-child(4) { animation-delay: 0.15s; }
+  .main-nav.show a:nth-child(5) { animation-delay: 0.2s; }
+  .main-nav.show a:nth-child(6) { animation-delay: 0.25s; }
+}
+
+/* Additional mobile menu improvements */
+@media (max-width: 768px) {
+  /* Make menu button more visible and touchable */
+  .mobile-menu-toggle {
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Better spacing for mobile nav items */
+  .main-nav a, .main-nav .user-menu {
+    padding: 1rem 0.75rem;
+    margin: 0;
+  }
+  
+  /* Add dividers between menu items */
+  .main-nav > a:not(:last-child),
+  .main-nav > .user-menu:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  /* Fix icon alignment in nav links */
+  .main-nav a i, .user-menu-toggle i {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+  }
+  
+  /* Prevent body scrolling when menu is open */
+  body.menu-open {
+    overflow: hidden;
+  }
+}
+
+/* General responsive table fixes */
+@media (max-width: 768px) {
+  /* Make tables responsive */
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+  
+  /* Hide table headers */
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+  }
+  
+  td {
+    /* Make the cells behave like rows */
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 50% !important;
+    text-align: left !important;
+  }
+  
+  /* Add labels for data cells */
+  td:before {
+    position: absolute;
+    left: 12px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: bold;
+    content: attr(data-label);
+  }
+  
+  /* Admin table specific fixes */
+  .admin-table td {
+    padding-left: 50% !important;
+  }
+  
+  /* Improved table styling to help readability on mobile */
+  tr {
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    border-radius: 6px;
+    margin-bottom: 1.2rem;
+    background: #fff;
+  }
+  
+  td:last-child {
+    border-bottom: none;
+    padding-bottom: 12px;
+  }
+  
+  /* Better handling for text overflow in cells */
+  td {
+    word-break: break-word;
+  }
+  
+  /* Action buttons */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .action-buttons a {
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* Form fixes */
+  form input, form select, form textarea {
+    max-width: 100%;
+  }
+    /* Ensure content doesn't overflow */
+  img, video, iframe {
+    max-width: 100%;
+    height: auto;
+  }
+    /* Fix container padding only on small screens */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin: 1rem auto !important; /* Smaller margins on mobile */
+  }
+  /* Manga grid improvements for mobile only */
+  .manga-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 1rem !important; /* Smaller gap on mobile */
+  }
+  
+  /* Ensure text doesn't overflow on mobile in all contexts 
+     but don't interfere with desktop text flow */
+  .container {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+  
+  /* Adjustments for manga-detail page */
+  .manga-header {
+    flex-direction: column;
+  }
+  
+  .manga-header-content {
+    padding-left: 0;
+    margin-top: 1rem;
+  }
+  
+  .manga-header-img {
+    margin: 0 auto;
+  }
+
+  /* Search result improvements */
+  .search-result {
+    flex-direction: column;
+  }
+  
+  .search-result-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+}
+
+/* Small screen optimization for buttons */
+@media (max-width: 480px) {
+  /* Make action buttons more compact */
+  .btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Stack buttons in forms */
+  form button + button, 
+  form .btn + .btn {
+    margin-top: 0.5rem;
+    margin-left: 0 !important;
+    display: block;
+  }
+}
+
+/* Enhanced mobile optimizations for manga items */
+@media (max-width: 768px) {
+  /* Make manga items more compact on mobile */
+  .manga-item {
+    padding: 1rem;
+    min-height: auto;
+  }
+  
+  /* Scale down the cover image size on mobile */
+  .manga-cover {
+    height: 150px;
+  }
+  
+  /* Make manga title font size smaller */
+  .manga-title {
+    font-size: 0.95rem;
+  }
+  
+  /* Make description text smaller */
+  .manga-description, .manga-notes {
+    font-size: 0.8rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    max-height: 50px;
+  }
+  
+  /* Make buttons in manga items more compact */
+  .manga-btn-container {
+    flex-wrap: wrap;
+  }
+  
+  .manga-btn {
+    height: 28px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  .manga-btn i {
+    font-size: 0.8rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  /* Further adjust manga grid for tiny screens */
+  .manga-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  /* Even more compact manga items */
+  .manga-item {
+    padding: 0.75rem;
+  }
+  
+  /* Show only icons in buttons on very small screens */
+  .manga-btn span {
+    display: none;
+  }
+  
+  .manga-btn i {
+    margin-right: 0;
+  }
+  
+  /* Add scroll to tables that might still overflow */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Responsive forms and inputs */
+@media (max-width: 768px) {
+  /* Form elements */
+  form input, form select, form textarea, form button {
+    font-size: 16px; /* Prevent zoom on iOS devices */
+  }
+  
+  /* Make form buttons full width on mobile */
+  form button {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  
+  /* Fix for forms with multiple buttons (like login/register) */
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-actions .btn {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Style the search form better on mobile */
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-form input {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Improve form groups and labels */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  /* Handle inline form layouts better */
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-row > div {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  /* Ensure dropdowns don't get cut off */
+  .dropdown-menu {
+    max-width: calc(100vw - 30px);
+  }
+}
+
+/* Header and footer improvements for mobile */
+@media (max-width: 768px) {
+  /* Make logo smaller on mobile */
+  header .logo img {
+    height: 35px;
+  }
+  
+  /* Add shadow to header when menu is open for better separation */
+  header.menu-open {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  
+  /* Footer improvements for mobile */
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    text-align: center;
+  }
+  
+  footer h4 {
+    margin-bottom: 1rem;
+  }
+    /* Make hero sections more compact */
+  .hero {
+    padding: 2rem 0;
+  }
+  
+  .hero h1 {
+    font-size: 1.75rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+}
