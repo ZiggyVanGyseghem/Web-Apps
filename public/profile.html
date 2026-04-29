@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker | User Profile</title>
+    <meta name="description" content="Manage your Anime Tracker profile and sync your library.">
+    <meta name="theme-color" content="#8a2be2">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script type="module" src="app.js"></script>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fa-solid fa-play"></i>
+                <span>AnimeTrack</span>
+            </a>
+            <nav class="main-nav">
+                <a href="index.html"><i class="fas fa-home"></i> <span>Home</span></a>
+                <a href="library.html"><i class="fas fa-book-open"></i> <span>My Library</span></a>
+                <a href="camera.html"><i class="fas fa-camera"></i> <span>Scanner</span></a>
+                <a href="#"><i class="fas fa-compass"></i> <span>Browse</span></a>
+                <a href="profile.html" class="active"><i class="fas fa-user"></i> <span>Profile</span></a>
+            </nav>
+            <button class="menu-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container main-content" style="padding-top: 2rem;">
+        <!-- LOADING STATE -->
+        <div id="auth-loading" style="text-align: center; padding: 4rem;">
+            <div class="spinner" style="width: 50px; height: 50px; border: 4px solid var(--glass-border); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+            <p style="color: var(--text-secondary);">Syncing your profile...</p>
+        </div>
+
+        <!-- AUTH FORMS (HIDDEN BY DEFAULT) -->
+        <div id="auth-forms" class="auth-container" style="display: none;">
+            <div id="login-form-box">
+                <h2 style="margin-bottom: 0.5rem;">Welcome Back</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Sign in to sync your library across devices.</p>
+                
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+                <div id="login-error" style="color: #ff4d4d; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+                
+                <button class="btn btn-primary" id="login-btn" style="width: 100%; margin-bottom: 1.5rem;">
+                    Sign In
+                </button>
+                <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                    Don't have an account? <a href="#" id="show-signup" style="color: var(--accent-secondary); font-weight: 600;">Create one</a>
+                </p>
+            </div>
+
+            <div id="signup-form-box" style="display: none;">
+                <h2 style="margin-bottom: 0.5rem;">Create Account</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Join AnimeTrack and start building your library.</p>
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="signup-username" placeholder="OtakuMaster">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="signup-email" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signup-password" placeholder="Min 6 characters">
+                </div>
+                <div id="signup-error" style="color: #ff4d4d; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+                
+                <button class="btn btn-primary" id="signup-btn" style="width: 100%; margin-bottom: 1.5rem;">
+                    Sign Up
+                </button>
+                <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                    Already have an account? <a href="#" id="show-login" style="color: var(--accent-secondary); font-weight: 600;">Sign in</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW (HIDDEN BY DEFAULT) -->
+        <div id="profile-view" style="display: none;">
+            <div class="hero" style="text-align: left; padding: 3rem; display: flex; align-items: center; gap: 3rem; flex-wrap: wrap;">
+                <div class="profile-avatar" id="user-avatar">?</div>
+                <div style="flex: 1; min-width: 250px;">
+                    <h1 id="user-name" style="margin-bottom: 0.5rem; font-size: 2.5rem;">User Name</h1>
+                    <p id="user-email" style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 1.5rem;">email@example.com</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn" id="logout-btn" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2);">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                        <button class="btn" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <section class="watchlist">
+                <h2><i class="fas fa-chart-line highlight"></i> Your Stats</h2>
+                <div class="anime-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="countdown-box" style="padding: 2rem;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Items Tracked</div>
+                        <div id="stat-count" style="font-size: 2.5rem; font-weight: 800; color: var(--accent-secondary);">0</div>
+                    </div>
+                    <div class="countdown-box" style="padding: 2rem;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Member Since</div>
+                        <div id="stat-date" style="font-size: 1.2rem; font-weight: 700; color: #fff;">Today</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loading = document.getElementById('auth-loading');
+            const authForms = document.getElementById('auth-forms');
+            const profileView = document.getElementById('profile-view');
+            
+            const loginBox = document.getElementById('login-form-box');
+            const signupBox = document.getElementById('signup-form-box');
+            
+            // Check auth state via polling app.js or waiting for init
+            const checkAuth = setInterval(() => {
+                if (window.authFunctions) {
+                    clearInterval(checkAuth);
+                    const user = window.authFunctions.getCurrentUser();
+                    updateUI(user);
+                }
+            }, 500);
+
+            function updateUI(user) {
+                loading.style.display = 'none';
+                if (user) {
+                    authForms.style.display = 'none';
+                    profileView.style.display = 'block';
+                    document.getElementById('user-name').innerText = user.displayName || 'Anime Fan';
+                    document.getElementById('user-email').innerText = user.email;
+                    document.getElementById('user-avatar').innerText = (user.displayName || user.email)[0].toUpperCase();
+                    document.getElementById('stat-date').innerText = new Date(user.metadata.creationTime).toLocaleDateString();
+                } else {
+                    profileView.style.display = 'none';
+                    authForms.style.display = 'block';
+                }
+            }
+
+            // Form Toggles
+            document.getElementById('show-signup').addEventListener('click', (e) => {
+                e.preventDefault();
+                loginBox.style.display = 'none';
+                signupBox.style.display = 'block';
+            });
+            document.getElementById('show-login').addEventListener('click', (e) => {
+                e.preventDefault();
+                signupBox.style.display = 'none';
+                loginBox.style.display = 'block';
+            });
+
+            // Login Logic
+            document.getElementById('login-btn').addEventListener('click', async () => {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-password').value;
+                const err = document.getElementById('login-error');
+                
+                try {
+                    await window.authFunctions.login(email, pass);
+                    location.reload();
+                } catch (e) {
+                    err.innerText = e.message;
+                    err.style.display = 'block';
+                }
+            });
+
+            // Signup Logic
+            document.getElementById('signup-btn').addEventListener('click', async () => {
+                const user = document.getElementById('signup-username').value;
+                const email = document.getElementById('signup-email').value;
+                const pass = document.getElementById('signup-password').value;
+                const err = document.getElementById('signup-error');
+                
+                if (pass.length < 6) {
+                    err.innerText = "Password must be at least 6 characters.";
+                    err.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    await window.authFunctions.signup(email, pass, user);
+                    location.reload();
+                } catch (e) {
+                    err.innerText = e.message;
+                    err.style.display = 'block';
+                }
+            });
+
+            // Logout Logic
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await window.authFunctions.logout();
+                location.reload();
+            });
+        });
+    </script>
+
+    <style>
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</body>
+
+</html>
