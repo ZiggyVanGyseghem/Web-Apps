@@ -175,10 +175,10 @@
                     // Fetch data from OpenLibrary API
                     bookDetails.innerHTML = "<p>Searching OpenLibrary Database for details...</p>";
                     
-                    fetch(\`https://openlibrary.org/api/books?bibkeys=ISBN:\${decodedText}&format=json&jscmd=data\`)
+                    fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${decodedText}&format=json&jscmd=data`)
                         .then(response => response.json())
                         .then(data => {
-                            const bookKey = \`ISBN:\${decodedText}\`;
+                            const bookKey = `ISBN:${decodedText}`;
                             if (data[bookKey]) {
                                 const bookInfo = data[bookKey];
                                 const title = bookInfo.title || 'Unknown Title';
@@ -186,17 +186,17 @@
                                 const cover = bookInfo.cover ? bookInfo.cover.medium : '';
                                 const categories = bookInfo.subjects ? bookInfo.subjects[0].name : 'Category not listed';
                                 
-                                let infoHtml = \`
+                                let infoHtml = `
                                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                                        <h3 style="color: #fff; margin-bottom: 5px;">\${title}</h3>
-                                        <p style="color: #9aa0a6; margin-bottom: 5px;">By \${authors}</p>
-                                        <p style="font-size: 0.8em; color: #8a2be2; margin-bottom: 15px;">\${categories}</p>
+                                        <h3 style="color: #fff; margin-bottom: 5px;">${title}</h3>
+                                        <p style="color: #9aa0a6; margin-bottom: 5px;">By ${authors}</p>
+                                        <p style="font-size: 0.8em; color: #8a2be2; margin-bottom: 15px;">${categories}</p>
                                         <button class="btn btn-primary" id="addWatchlistBtn" style="padding: 0.5rem 1rem; font-size: 0.9em;">Add to Library</button>
                                     </div>
-                                \`;
+                                `;
                                 
                                 if (cover) {
-                                    infoHtml = \`<img src="\${cover}" alt="Book Cover" style="max-height: 150px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">\` + infoHtml;
+                                    infoHtml = `<img src="${cover}" alt="Book Cover" style="max-height: 150px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">` + infoHtml;
                                 }
                                 
                                 bookDetails.innerHTML = infoHtml;
