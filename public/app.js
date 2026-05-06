@@ -14,7 +14,8 @@ import {
     arrayUnion,
     setDoc,
     getDoc,
-    writeBatch
+    writeBatch,
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { 
     getAuth, 
@@ -134,6 +135,10 @@ window.saveToWatchlist = async function(item) {
             author: item.author,
             category: item.category,
             cover: item.cover,
+            episodes: item.episodes || null,
+            status: item.status || null,
+            broadcast: item.broadcast || null,
+            malId: item.malId || null,
             volumes: [newVolume],
             isGrouped: true
         });
@@ -190,18 +195,46 @@ function renderCards(watchlist) {
 
     if (item.type === 'anime') {
         counts.anime++;
+        const badgeText = item.status === 'Currently Airing' ? 'Airing' : (item.status === 'Finished Airing' ? 'Completed' : 'Saved');
+        const totalEp = item.episodes ? item.episodes : '?';
+        const epPlaceholder = item.status === 'Currently Airing' ? `? / ${totalEp} Episodes` : (item.episodes ? `${item.episodes} Episodes` : (item.author || item.category));
+        const subText = item.status === 'Currently Airing' ? (item.broadcast ? `Airs: ${item.broadcast}` : 'Airing Now') : (item.status || 'In Library');
+        const epId = `ep-count-${item.docId}`;
+
         card.innerHTML = `
           <div class="card-image" style="${bgStyle}">
-            <div class="status-badge">Airing</div>
+            <div class="status-badge">${badgeText}</div>
           </div>
-          <div class="card-content">
-            <h3 class="card-title">${item.title}</h3>
-            <p class="card-episode">${item.author || item.category}</p>
-            <div class="countdown-box">
-              <div class="countdown-text cd-timer" data-time="${item.nextAiring || new Date().getTime() + 86400000}">--:--:--</div>
+          <div class="card-content" style="position: relative;">
+            <button class="remove-btn" data-id="${item.docId}" style="position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-trash" style="font-size: 0.8rem;"></i>
+            </button>
+            <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
+            <p class="card-episode" id="${epId}">${epPlaceholder}</p>
+            <div class="countdown-box" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
+              <div class="countdown-text" style="font-size: 1rem; color: #9aa0a6;">${subText}</div>
             </div>
           </div>
         `;
+
+        // If currently airing and we have a malId, fetch live aired episode count
+        if (item.status === 'Currently Airing' && item.malId) {
+            fetch(`https://api.jikan.moe/v4/anime/${item.malId}`)
+                .then(r => r.json())
+                .then(d => {
+                    const aired = d.data?.episodes_aired ?? null;
+                    const total = d.data?.episodes ?? totalEp;
+                    const el = document.getElementById(epId);
+                    if (el) {
+                        el.innerText = aired !== null ? `${aired} / ${total} Episodes` : (total ? `${total} Episodes` : 'Airing');
+                    }
+                    // also update the clone in the home grid
+                    const homeEl = document.querySelector(`#anime-grid #${epId}`);
+                    if (homeEl) homeEl.innerText = aired !== null ? `${aired} / ${total} Episodes` : `${total} Episodes`;
+                })
+                .catch(() => {}); // silently fail, placeholder stays
+        }
+
         if (homeAnimeContainer) homeAnimeContainer.appendChild(card.cloneNode(true));
         if (libAnimeContainer) libAnimeContainer.appendChild(card);
         
@@ -211,8 +244,11 @@ function renderCards(watchlist) {
           <div class="card-image" style="${bgStyle}">
             <div class="status-badge" style="color: #fff; background: var(--accent-primary)">Book</div>
           </div>
-          <div class="card-content">
-            <h3 class="card-title">${item.title}</h3>
+          <div class="card-content" style="position: relative;">
+            <button class="remove-btn" data-id="${item.docId}" style="position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-trash" style="font-size: 0.8rem;"></i>
+            </button>
+            <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
             <p class="card-episode">${item.author || item.category}</p>
             <div class="countdown-box" style="background: var(--glass-bg); border-color: var(--glass-border);">
               <div class="countdown-text" style="font-size: 1rem; color: var(--text-secondary);">${volText}</div>
@@ -227,8 +263,11 @@ function renderCards(watchlist) {
           <div class="card-image" style="${bgStyle}">
             <div class="status-badge" style="background: #333;">Misc</div>
           </div>
-          <div class="card-content">
-            <h3 class="card-title">${item.title}</h3>
+          <div class="card-content" style="position: relative;">
+            <button class="remove-btn" data-id="${item.docId}" style="position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-trash" style="font-size: 0.8rem;"></i>
+            </button>
+            <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
             <p class="card-episode">${item.author || item.category}</p>
             <div class="countdown-box" style="background: var(--glass-bg); border-color: var(--glass-border);">
               <div class="countdown-text" style="font-size: 1rem; color: var(--text-secondary);">${volText}</div>
@@ -237,6 +276,23 @@ function renderCards(watchlist) {
         `;
         if (libMiscContainer) libMiscContainer.appendChild(card);
     }
+  });
+
+  // Attach delete logic
+  document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const docId = e.currentTarget.getAttribute('data-id');
+          if (confirm("Are you sure you want to remove this series from your library?")) {
+              try {
+                  await deleteDoc(doc(db, currentWatchlistRef.path, docId));
+              } catch (err) {
+                  console.error("Error removing document: ", err);
+                  alert("Failed to remove series.");
+              }
+          }
+      });
   });
 }
 
@@ -249,14 +305,20 @@ function initApp() {
         document.getElementById('anime-grid') || 
         document.getElementById('lib-anime-grid') || 
         document.getElementById('lib-book-grid') || 
-        document.getElementById('lib-misc-grid')
+        document.getElementById('lib-misc-grid') ||
+        document.getElementById('stat-count')
     ) {
         snapshotUnsubscribe = onSnapshot(currentWatchlistRef, (snapshot) => {
             const list = [];
             snapshot.forEach((doc) => {
                 list.push({ docId: doc.id, ...doc.data() });
             });
+            // Expose saved malIds globally so schedule calendar can detect duplicates
+            window.savedMalIds = new Set(list.map(i => String(i.malId)).filter(Boolean));
+            window.savedTitles = new Set(list.map(i => (i.title || '').toLowerCase()));
             renderCards(list);
+            // Notify schedule grid to update its buttons
+            document.dispatchEvent(new CustomEvent('library-updated'));
         });
     }
 }

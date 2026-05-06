@@ -1,4 +1,4 @@
-const CACHE_NAME = 'animetrack-cache-v9';
+const CACHE_NAME = 'animetrack-cache-v16';
 const urlsToCache = [
   './',
   './index.html',

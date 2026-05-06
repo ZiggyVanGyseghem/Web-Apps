@@ -106,6 +106,10 @@
                         const synopsis = item.synopsis ? item.synopsis.substring(0, 100) + '...' : 'No description available.';
                         const score = item.score || 'N/A';
                         const url = item.url;
+                        const malId = item.mal_id || '';
+                        const episodes = item.episodes || item.chapters || '';
+                        const status = item.status || '';
+                        const broadcast = item.broadcast?.string || '';
                         
                         const card = document.createElement('div');
                         card.className = 'anime-card';
@@ -118,7 +122,7 @@
                             <div class="card-content">
                                 <h3 class="card-title">${title}</h3>
                                 <p class="card-episode" style="font-size: 0.8rem;">${synopsis}</p>
-                                <button class="btn btn-primary add-to-lib-btn" style="width: 100%; margin-top: 10px; padding: 0.5rem;" data-title="${title}" data-type="${type}" data-cover="${cover}">
+                                <button class="btn btn-primary add-to-lib-btn" style="width: 100%; margin-top: 10px; padding: 0.5rem;" data-title="${title}" data-type="${type}" data-cover="${cover}" data-episodes="${episodes}" data-status="${status}" data-broadcast="${broadcast}" data-mal-id="${malId}">
                                     <i class="fa-solid fa-plus"></i> Add Series
                                 </button>
                             </div>
@@ -137,6 +141,10 @@
                                 seriesName: b.getAttribute('data-title'),
                                 type: b.getAttribute('data-type'),
                                 cover: b.getAttribute('data-cover'),
+                                episodes: b.getAttribute('data-episodes'),
+                                status: b.getAttribute('data-status'),
+                                broadcast: b.getAttribute('data-broadcast'),
+                                malId: b.getAttribute('data-mal-id'),
                                 volumeId: 'api_' + Math.random().toString(36).substr(2, 9),
                                 volumeTitle: 'Master Entry',
                                 author: 'Jikan API',

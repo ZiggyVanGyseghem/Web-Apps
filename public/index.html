@@ -46,14 +46,224 @@
         </section>
 
         <section class="watchlist">
-            <h2><i class="fa-solid fa-tv"></i> Airing Anime</h2>
+            <h2><i class="fa-solid fa-tv"></i> My Airing Anime</h2>
             <div class="anime-grid" id="anime-grid">
                 <!-- Cards will be populated by JS -->
             </div>
         </section>
+
+        <section class="watchlist" style="margin-bottom: 3rem;">
+            <h2><i class="fa-solid fa-calendar-days" style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Airing Schedule</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Hover over any title to add it to your library.</p>
+
+            <!-- Day Picker Pills -->
+            <div id="day-picker" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            </div>
+
+            <!-- Schedule spinner -->
+            <div id="schedule-spinner" style="display: none; text-align: center; padding: 2rem;">
+                <div style="width: 36px; height: 36px; border: 3px solid var(--glass-border); border-top-color: var(--accent-primary); border-radius: 50%; animation: sched-spin 1s linear infinite; margin: 0 auto;"></div>
+            </div>
+
+            <!-- Schedule grid -->
+            <div id="schedule-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-top: 0.5rem;"></div>
+        </section>
     </main>
 
     <script type="module" src="app.js"></script>
+
+    <style>
+        @keyframes sched-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Day picker pills */
+        .day-pill {
+            padding: 0.45rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .day-pill:hover { background: rgba(138,43,226,0.15); color: #fff; border-color: rgba(138,43,226,0.4); }
+        .day-pill.active { background: var(--accent-gradient); color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(138,43,226,0.4); }
+
+        /* Schedule cards */
+        .sched-card {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            background: var(--panel-bg);
+            aspect-ratio: 2/3;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .sched-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+        .sched-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sched-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+        }
+        .sched-card-info {
+            position: absolute;
+            bottom: 0;
+            left: 0; right: 0;
+            padding: 0.75rem;
+        }
+        .sched-card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 0.3rem;
+        }
+        .sched-card-ep { font-size: 0.7rem; color: var(--accent-secondary); font-weight: 600; }
+        .sched-add-btn {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(138,43,226,0.75);
+            backdrop-filter: blur(4px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .sched-add-btn i { font-size: 1.5rem; }
+        .sched-card:hover .sched-add-btn { opacity: 1; }
+        .sched-add-btn.added { background: rgba(40,167,69,0.85); }
+        .sched-add-btn.saving { background: rgba(255,193,7,0.85); }
+    </style>
+
+    <script>
+        const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+        const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const todayIdx = (new Date().getDay() + 6) % 7; // JS: Sun=0, we want Mon=0
+
+        const picker = document.getElementById('day-picker');
+        const schedGrid = document.getElementById('schedule-grid');
+        const spinner = document.getElementById('schedule-spinner');
+
+        // Build pills
+        days.forEach((day, i) => {
+            const pill = document.createElement('button');
+            pill.className = 'day-pill' + (i === todayIdx ? ' active' : '');
+            pill.textContent = labels[i];
+            pill.dataset.day = day;
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                loadSchedule(day);
+            });
+            picker.appendChild(pill);
+        });
+
+        async function loadSchedule(day) {
+            schedGrid.innerHTML = '';
+            spinner.style.display = 'block';
+            try {
+                const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${day}&limit=25&sfw=true`);
+                const data = await res.json();
+                spinner.style.display = 'none';
+                if (!data.data || data.data.length === 0) {
+                    schedGrid.innerHTML = '<p style="color: var(--text-secondary);">Nothing scheduled.</p>';
+                    return;
+                }
+                data.data.forEach(anime => {
+                    const isNSFW = anime.genres?.some(g => g.name.toLowerCase() === 'hentai');
+                    if (isNSFW) return;
+
+                    const cover = anime.images?.jpg?.image_url || '';
+                    const title = anime.title || '';
+                    const episodes = anime.episodes || '?';
+                    const malId = anime.mal_id || '';
+                    const status = anime.status || 'Currently Airing';
+                    const broadcast = anime.broadcast?.string || '';
+
+                    const card = document.createElement('div');
+                    card.className = 'sched-card';
+                    card.innerHTML = `
+                        <img src="${cover}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+                        <div class="sched-card-overlay"></div>
+                        <div class="sched-card-info">
+                            <div class="sched-card-title">${title}</div>
+                            <div class="sched-card-ep">${broadcast || (episodes !== '?' ? episodes + ' eps' : 'Airing')}</div>
+                        </div>
+                        <div class="sched-add-btn" id="add-btn-${malId}">
+                            <i class="fa-solid fa-plus"></i>
+                            Add to Library
+                        </div>
+                    `;
+                    schedGrid.appendChild(card);
+
+                    // Add button logic
+                    card.querySelector('.sched-add-btn').addEventListener('click', async () => {
+                        const btn = document.getElementById(`add-btn-${malId}`);
+                        if (!btn || btn.classList.contains('added')) return;
+                        btn.classList.add('saving');
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                        const item = {
+                            seriesName: title,
+                            type: 'anime',
+                            cover: cover,
+                            episodes: String(episodes),
+                            status: status,
+                            broadcast: broadcast,
+                            malId: String(malId),
+                            volumeId: 'sched_' + Math.random().toString(36).substr(2, 9),
+                            volumeTitle: 'Master Entry',
+                            author: 'Jikan API',
+                            category: 'Schedule Import'
+                        };
+
+                        if (window.saveToWatchlist) {
+                            const saved = await window.saveToWatchlist(item);
+                            btn.classList.remove('saving');
+                            btn.classList.add('added');
+                            btn.innerHTML = saved
+                                ? '<i class="fa-solid fa-check"></i> Added!'
+                                : '<i class="fa-solid fa-check"></i> Already Saved';
+                        } else {
+                            btn.classList.remove('saving');
+                            btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Retry';
+                        }
+                    });
+                });
+            } catch(e) {
+                spinner.style.display = 'none';
+                schedGrid.innerHTML = '<p style="color: #ff4d4d;">Failed to load schedule.</p>';
+            }
+        }
+
+        // Load today on page load
+        loadSchedule(days[todayIdx]);
+
+        // When library loads/updates, mark already-saved cards as "In Library"
+        function markSavedCards() {
+            document.querySelectorAll('.sched-add-btn').forEach(btn => {
+                if (btn.classList.contains('added')) return;
+                const malId = btn.id.replace('add-btn-', '');
+                if (window.savedMalIds && window.savedMalIds.has(String(malId))) {
+                    btn.classList.add('added');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> In Library';
+                }
+            });
+        }
+
+        document.addEventListener('library-updated', markSavedCards);
+    </script>
 </body>
 
 </html>
