@@ -1,9 +1,10 @@
-const CACHE_NAME = 'animetrack-cache-v7';
+const CACHE_NAME = 'animetrack-cache-v9';
 const urlsToCache = [
   './',
   './index.html',
   './camera.html',
   './library.html',
+  './browse.html',
   './style.css',
   './app.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
