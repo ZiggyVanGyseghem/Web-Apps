@@ -180,16 +180,23 @@
                     schedGrid.innerHTML = '<p style="color: var(--text-secondary);">Nothing scheduled.</p>';
                     return;
                 }
+                const seenIds = new Set();
                 data.data.forEach(anime => {
                     const isNSFW = anime.genres?.some(g => g.name.toLowerCase() === 'hentai');
                     if (isNSFW) return;
 
+                    // Skip duplicates from the API
+                    const malId = anime.mal_id || '';
+                    if (seenIds.has(malId)) return;
+                    seenIds.add(malId);
+
                     const cover = anime.images?.jpg?.image_url || '';
                     const title = anime.title || '';
                     const episodes = anime.episodes || '?';
-                    const malId = anime.mal_id || '';
                     const status = anime.status || 'Currently Airing';
                     const broadcast = anime.broadcast?.string || '';
+                    const nextMs = window.parseNextAiring ? window.parseNextAiring(broadcast) : null;
+                    const epLabel = nextMs ? '' : (episodes !== '?' ? episodes + ' eps' : 'Airing');
 
                     const card = document.createElement('div');
                     card.className = 'sched-card';
@@ -198,7 +205,9 @@
                         <div class="sched-card-overlay"></div>
                         <div class="sched-card-info">
                             <div class="sched-card-title">${title}</div>
-                            <div class="sched-card-ep">${broadcast || (episodes !== '?' ? episodes + ' eps' : 'Airing')}</div>
+                            <div class="sched-card-ep" style="color: var(--accent-secondary); font-weight: 700; font-size: 0.72rem;">
+                                ${nextMs ? `<span class="sched-timer" data-time="${nextMs}">--:--:--</span>` : epLabel}
+                            </div>
                         </div>
                         <div class="sched-add-btn" id="add-btn-${malId}">
                             <i class="fa-solid fa-plus"></i>
@@ -263,6 +272,24 @@
         }
 
         document.addEventListener('library-updated', markSavedCards);
+
+        // Tick schedule card countdowns every second
+        function formatSched(ms) {
+            if (ms < 0) return 'Now!';
+            const d = Math.floor(ms / 86400000);
+            const h = Math.floor((ms % 86400000) / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            if (d > 0) return `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+        setInterval(() => {
+            const now = Date.now();
+            document.querySelectorAll('.sched-timer').forEach(el => {
+                const t = parseInt(el.dataset.time, 10);
+                el.textContent = formatSched(t - now);
+            });
+        }, 1000);
     </script>
 </body>
 

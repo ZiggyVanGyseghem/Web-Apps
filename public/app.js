@@ -164,6 +164,30 @@ function formatCountdown(distance) {
   return out;
 }
 
+// Parses "Wednesdays at 21:55 (JST)" -> UTC timestamp of next occurrence
+function parseNextAiring(broadcastStr) {
+    if (!broadcastStr) return null;
+    const match = broadcastStr.match(/(\w+)\s+at\s+(\d{1,2}:\d{2})/i);
+    if (!match) return null;
+    const dayMap = {
+        mondays:1, tuesdays:2, wednesdays:3, thursdays:4, fridays:5, saturdays:6, sundays:0,
+        monday:1,  tuesday:2,  wednesday:3,  thursday:4,  friday:5,  saturday:6,  sunday:0
+    };
+    const targetDay = dayMap[match[1].toLowerCase()];
+    if (targetDay === undefined) return null;
+    const [hours, minutes] = match[2].split(':').map(Number);
+    const JST = 9 * 3600 * 1000;
+    const nowUtc = Date.now();
+    const nowJst = new Date(nowUtc + JST);
+    const tgt = new Date(nowUtc + JST);
+    tgt.setUTCHours(hours, minutes, 0, 0);
+    let daysUntil = (targetDay - nowJst.getUTCDay() + 7) % 7;
+    if (daysUntil === 0 && tgt.getTime() <= nowJst.getTime()) daysUntil = 7;
+    tgt.setUTCDate(tgt.getUTCDate() + daysUntil);
+    return tgt.getTime() - JST; // back to UTC ms
+}
+window.parseNextAiring = parseNextAiring;
+
 function renderCards(watchlist) {
   const homeAnimeContainer = document.getElementById('anime-grid');
   const libAnimeContainer = document.getElementById('lib-anime-grid');
@@ -198,8 +222,11 @@ function renderCards(watchlist) {
         const badgeText = item.status === 'Currently Airing' ? 'Airing' : (item.status === 'Finished Airing' ? 'Completed' : 'Saved');
         const totalEp = item.episodes ? item.episodes : '?';
         const epPlaceholder = item.status === 'Currently Airing' ? `? / ${totalEp} Episodes` : (item.episodes ? `${item.episodes} Episodes` : (item.author || item.category));
-        const subText = item.status === 'Currently Airing' ? (item.broadcast ? `Airs: ${item.broadcast}` : 'Airing Now') : (item.status || 'In Library');
         const epId = `ep-count-${item.docId}`;
+        const nextMs = item.broadcast ? parseNextAiring(item.broadcast) : null;
+        const countdownInner = nextMs
+            ? `<div class="countdown-text cd-timer" data-time="${nextMs}" style="font-size: 0.95rem; color: var(--accent-secondary); font-weight: 700; letter-spacing:1px;">--:--:--</div>`
+            : `<div class="countdown-text" style="font-size: 1rem; color: #9aa0a6;">${item.status === 'Currently Airing' ? 'Airing Now' : (item.status || 'In Library')}</div>`;
 
         card.innerHTML = `
           <div class="card-image" style="${bgStyle}">
@@ -212,7 +239,7 @@ function renderCards(watchlist) {
             <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
             <p class="card-episode" id="${epId}">${epPlaceholder}</p>
             <div class="countdown-box" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
-              <div class="countdown-text" style="font-size: 1rem; color: #9aa0a6;">${subText}</div>
+              ${countdownInner}
             </div>
           </div>
         `;
