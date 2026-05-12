@@ -24,6 +24,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-color);
@@ -301,7 +306,23 @@ a {
 }
 
 #reader video {
-  object-fit: cover !important;
+  /* Use contain so the visible video matches the scanning canvas region
+     and avoids center-cropping which can make the visual overlay and
+     the actual scan area mismatch on some phones. */
+  object-fit: contain !important;
+  background: #000;
+}
+
+@media (max-width: 768px) {
+  .scanner-container {
+    padding: 0 0.5rem;
+  }
+
+  #reader {
+    aspect-ratio: 1 / 1;
+    min-height: 320px;
+    margin: 1.25rem 0;
+  }
 }
 
 /* Profile / Auth Styles */
@@ -366,12 +387,60 @@ a {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .main-nav {
-    display: none;
+  /* Prevent scrolling when menu is open */
+  body.menu-open {
+    overflow: hidden;
+  }
+
+  /* Add semi-transparent backdrop when menu is open */
+  body.menu-open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    pointer-events: none;
   }
 
   .menu-toggle {
     display: block;
+    z-index: 1100;
+  }
+
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100vh;
+    background: rgba(8, 9, 13, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 80px 2rem 2rem;
+    gap: 1rem;
+    transition: var(--transition);
+    border-left: 1px solid var(--glass-border);
+    z-index: 1050;
+    display: flex; /* Override display: none */
+    overflow-y: auto;
+    transform: translateX(110%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .navbar.nav-active .main-nav {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .navbar.nav-active #burger-menu i::before {
+    content: "\f00d"; /* FontAwesome Xmark icon */
   }
 
   .hero h1 {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'animetrack-cache-v18';
+const CACHE_NAME = 'animetrack-cache-v26';
 const urlsToCache = [
   './',
   './index.html',
@@ -21,6 +21,13 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Fetch Event (Network First, falling back to Cache)
@@ -43,5 +50,27 @@ self.addEventListener('activate', event => {
         })
       );
     })
+  );
+  clients.claim();
+});
+// Notification Click Event
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  // Broadcast vibration to all clients when notification is clicked
+  clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+    for (let client of windowClients) {
+      client.postMessage({ type: 'NOTIFICATION_CLICKED', vibrate: [50, 100, 50] });
+    }
+  });
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        // If app is already open, focus it
+        for (let client of windowClients) {
+          if ('focus' in client) return client.focus();
+        }
+        // If not, open it
+        if (clients.openWindow) return clients.openWindow('./index.html');
+      })
   );
 });

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Anime Tracker | Seasonal Anime Countdown</title>
     <meta name="description" content="Track your favorite seasonal anime and countdown to the next episode drop.">
     <meta name="theme-color" content="#8a2be2">
@@ -30,7 +30,11 @@
                 <a href="browse.html"><i class="fas fa-compass"></i> <span>Browse</span></a>
                 <a href="profile.html"><i class="fas fa-user"></i> <span>Profile</span></a>
             </nav>
-            <button class="menu-toggle" aria-label="Toggle menu">
+            <!-- PWA Install Button -->
+            <button id="installBtn" class="menu-toggle" aria-label="Install as PWA" title="Install as PWA" style="display:none;background:var(--accent-gradient);border:none;">
+                <i class="fas fa-download"></i>
+            </button>
+            <button id="burger-menu" class="menu-toggle" aria-label="Toggle menu">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -40,15 +44,47 @@
         <section class="hero">
             <h1>Track Your <span class="highlight">Anime</span> Instantly</h1>
             <p>Never miss an episode. Live countdowns to the next drop, notifications, and offline access.</p>
-            <button class="btn btn-primary" id="demo-notification-btn">
-                <i class="fas fa-bell"></i> Enable Notifications
-            </button>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+                <button class="btn btn-primary" id="demo-notification-btn">
+                    <i class="fas fa-bell"></i> Enable Notifications
+                </button>
+                <button class="btn" id="test-notification-btn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: #fff;">
+                    <i class="fas fa-clock"></i> Test 3s Timer
+                </button>
+            </div>
         </section>
 
         <section class="watchlist">
-            <h2><i class="fa-solid fa-tv"></i> My Airing Anime</h2>
-            <div class="anime-grid" id="anime-grid">
-                <!-- Cards will be populated by JS -->
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <h2 style="margin: 0;"><i class="fa-solid fa-tv"></i> My Airing Anime</h2>
+                <div style="display: flex; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 999px; padding: 3px; gap: 3px; margin-left: auto;">
+                    <button id="view-library-btn" class="view-toggle-btn active" onclick="switchView('library')">
+                        <i class="fa-solid fa-th-large"></i> Library
+                    </button>
+                    <button id="view-schedule-btn" class="view-toggle-btn" onclick="switchView('schedule')">
+                        <i class="fa-solid fa-calendar-week"></i> My Schedule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Library Grid View -->
+            <div id="view-library" class="anime-grid" style="margin-top: 1rem;">
+                <div id="anime-grid" style="display: contents;">
+                    <!-- Cards will be populated by JS -->
+                </div>
+            </div>
+
+            <!-- Personal Schedule View -->
+            <div id="view-schedule" style="display: none;">
+                <!-- My Day Picker Pills -->
+                <div id="my-day-picker" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0 1.5rem;"></div>
+                <!-- Spinner -->
+                <div id="my-sched-spinner" style="display: none; text-align: center; padding: 2rem;">
+                    <div style="width: 36px; height: 36px; border: 3px solid var(--glass-border); border-top-color: var(--accent-primary); border-radius: 50%; animation: sched-spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+                <!-- Personal schedule grid (poster cards) -->
+                <div id="my-sched-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;"></div>
+                <p id="my-sched-empty" style="display: none; color: var(--text-secondary); padding: 1rem 0;">None of your saved anime air on this day.</p>
             </div>
         </section>
 
@@ -75,6 +111,29 @@
     <style>
         @keyframes sched-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+        /* View toggle buttons */
+        .view-toggle-btn {
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .view-toggle-btn:hover { color: #fff; }
+        .view-toggle-btn.active {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(138,43,226,0.4);
+        }
+
         /* Day picker pills */
         .day-pill {
             padding: 0.45rem 1rem;
@@ -90,6 +149,22 @@
         }
         .day-pill:hover { background: rgba(138,43,226,0.15); color: #fff; border-color: rgba(138,43,226,0.4); }
         .day-pill.active { background: var(--accent-gradient); color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(138,43,226,0.4); }
+
+        .nav-arrow {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-size: 0.8rem;
+        }
+        .nav-arrow:hover { background: rgba(138,43,226,0.15); color: #fff; border-color: rgba(138,43,226,0.4); }
 
         /* Schedule cards */
         .sched-card {
@@ -151,23 +226,172 @@
         const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
         const todayIdx = (new Date().getDay() + 6) % 7; // JS: Sun=0, we want Mon=0
 
+        // ── View Toggle ────────────────────────────────────────────
+        function switchView(mode) {
+            const libView = document.getElementById('view-library');
+            const schedView = document.getElementById('view-schedule');
+            const libBtn = document.getElementById('view-library-btn');
+            const schedBtn = document.getElementById('view-schedule-btn');
+
+            if (mode === 'library') {
+                libView.style.display = '';
+                schedView.style.display = 'none';
+                libBtn.classList.add('active');
+                schedBtn.classList.remove('active');
+            } else {
+                libView.style.display = 'none';
+                schedView.style.display = 'block';
+                libBtn.classList.remove('active');
+                schedBtn.classList.add('active');
+                // Load today if not already loaded
+                if (!mySchedLoaded) loadMySchedule(days[todayIdx]);
+            }
+        }
+
+        // ── Personal Schedule (My Schedule view) ───────────────────
+        const myPicker = document.getElementById('my-day-picker');
+        let mySchedLoaded = false;
+        let myCurrentDayIdx = todayIdx;
+
+        function setupPicker(pickerEl, onDayChange) {
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.gap = '0.5rem';
+            container.style.flexWrap = 'wrap';
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'nav-arrow';
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'nav-arrow';
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+
+            const pillsContainer = document.createElement('div');
+            pillsContainer.style.display = 'flex';
+            pillsContainer.style.gap = '0.4rem';
+            pillsContainer.style.flexWrap = 'wrap';
+
+            const updateActive = (idx) => {
+                pillsContainer.querySelectorAll('.day-pill').forEach((p, i) => {
+                    p.classList.toggle('active', i === idx);
+                });
+                onDayChange(days[idx]);
+            };
+
+            days.forEach((day, i) => {
+                const pill = document.createElement('button');
+                pill.className = 'day-pill' + (i === todayIdx ? ' active' : '');
+                pill.textContent = labels[i];
+                pill.addEventListener('click', () => {
+                    if (pickerEl === myPicker) myCurrentDayIdx = i;
+                    else globalCurrentDayIdx = i;
+                    updateActive(i);
+                });
+                pillsContainer.appendChild(pill);
+            });
+
+            prevBtn.addEventListener('click', () => {
+                let idx = (pickerEl === myPicker ? myCurrentDayIdx : globalCurrentDayIdx);
+                idx = (idx - 1 + 7) % 7;
+                if (pickerEl === myPicker) myCurrentDayIdx = idx;
+                else globalCurrentDayIdx = idx;
+                updateActive(idx);
+            });
+
+            nextBtn.addEventListener('click', () => {
+                let idx = (pickerEl === myPicker ? myCurrentDayIdx : globalCurrentDayIdx);
+                idx = (idx + 1) % 7;
+                if (pickerEl === myPicker) myCurrentDayIdx = idx;
+                else globalCurrentDayIdx = idx;
+                updateActive(idx);
+            });
+
+            container.appendChild(prevBtn);
+            container.appendChild(pillsContainer);
+            container.appendChild(nextBtn);
+            pickerEl.appendChild(container);
+        }
+
+        setupPicker(myPicker, (day) => loadMySchedule(day));
+
+        async function loadMySchedule(day) {
+            const grid = document.getElementById('my-sched-grid');
+            const spin = document.getElementById('my-sched-spinner');
+            const empty = document.getElementById('my-sched-empty');
+            grid.innerHTML = '';
+            empty.style.display = 'none';
+            spin.style.display = 'block';
+            mySchedLoaded = true;
+
+            try {
+                const res = await fetch(`https://api.jikan.moe/v4/schedules?filter=${day}&limit=25&sfw=true`);
+                const data = await res.json();
+                spin.style.display = 'none';
+
+                const seenMy = new Set();
+                let matched = 0;
+                (data.data || []).forEach(anime => {
+                    const malId = String(anime.mal_id || '');
+                    if (!malId || seenMy.has(malId)) return;
+                    seenMy.add(malId);
+
+                    // Only show anime in the user's library
+                    if (!window.savedMalIds || !window.savedMalIds.has(malId)) return;
+                    matched++;
+
+                    const cover = anime.images?.jpg?.image_url || '';
+                    const title = anime.title || '';
+                    const broadcast = anime.broadcast?.string || '';
+                    const nextMs = window.parseNextAiring ? window.parseNextAiring(broadcast) : null;
+                    const episodes = anime.episodes || '?';
+
+                    const card = document.createElement('div');
+                    card.className = 'sched-card';
+                    card.innerHTML = `
+                        <img src="${cover}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+                        <div class="sched-card-overlay"></div>
+                        <div class="sched-card-info">
+                            <div class="sched-card-title">${title}</div>
+                            <div class="sched-card-ep" style="color: var(--accent-secondary); font-weight: 700; font-size: 0.72rem;">
+                                ${nextMs ? `<span class="sched-timer" data-time="${nextMs}">--:--:--</span>` : (episodes !== '?' ? episodes + ' eps' : 'Airing')}
+                            </div>
+                        </div>
+                        <div class="sched-add-btn added" style="pointer-events: none;">
+                            <i class="fa-solid fa-check"></i>
+                            In Library
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                if (matched === 0) empty.style.display = 'block';
+            } catch(e) {
+                spin.style.display = 'none';
+                grid.innerHTML = '<p style="color: #ff4d4d;">Failed to load.</p>';
+            }
+        }
+
+        // Reload My Schedule if library updates while in that view
+        document.addEventListener('library-updated', () => {
+            const schedView = document.getElementById('view-schedule');
+            if (schedView && schedView.style.display !== 'none') {
+                mySchedLoaded = false;
+                const activeDay = myPicker.querySelector('.day-pill.active');
+                if (activeDay) loadMySchedule(activeDay.textContent.toLowerCase() + (days.find(d => d.startsWith(activeDay.textContent.toLowerCase())) ? '' : ''));
+                // safer: re-load today
+                loadMySchedule(days[todayIdx]);
+            }
+        });
+
+        // ── Global Schedule ─────────────────────────────────────────
         const picker = document.getElementById('day-picker');
         const schedGrid = document.getElementById('schedule-grid');
         const spinner = document.getElementById('schedule-spinner');
+        let globalCurrentDayIdx = todayIdx;
 
-        // Build pills
-        days.forEach((day, i) => {
-            const pill = document.createElement('button');
-            pill.className = 'day-pill' + (i === todayIdx ? ' active' : '');
-            pill.textContent = labels[i];
-            pill.dataset.day = day;
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                loadSchedule(day);
-            });
-            picker.appendChild(pill);
-        });
+        setupPicker(picker, (day) => loadSchedule(day));
 
         async function loadSchedule(day) {
             schedGrid.innerHTML = '';

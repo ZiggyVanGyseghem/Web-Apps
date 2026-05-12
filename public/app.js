@@ -224,25 +224,26 @@ function renderCards(watchlist) {
         const epPlaceholder = item.status === 'Currently Airing' ? `? / ${totalEp} Episodes` : (item.episodes ? `${item.episodes} Episodes` : (item.author || item.category));
         const epId = `ep-count-${item.docId}`;
         const nextMs = item.broadcast ? parseNextAiring(item.broadcast) : null;
-        const countdownInner = nextMs
-            ? `<div class="countdown-text cd-timer" data-time="${nextMs}" style="font-size: 0.95rem; color: var(--accent-secondary); font-weight: 700; letter-spacing:1px;">--:--:--</div>`
-            : `<div class="countdown-text" style="font-size: 1rem; color: #9aa0a6;">${item.status === 'Currently Airing' ? 'Airing Now' : (item.status || 'In Library')}</div>`;
+                const timerId = `timer-${item.docId}`;
+                const countdownInner = nextMs
+                        ? `<div class="countdown-text cd-timer" id="${timerId}" data-time="${nextMs}" data-anime-title="${item.title}" data-anime-id="${item.docId}" style="font-size: 0.95rem; color: var(--accent-secondary); font-weight: 700; letter-spacing:1px;">--:--:--</div>`
+                        : `<div class="countdown-text" style="font-size: 1rem; color: #9aa0a6;">${item.status === 'Currently Airing' ? 'Airing Now' : (item.status || 'In Library')}</div>`;
 
-        card.innerHTML = `
-          <div class="card-image" style="${bgStyle}">
-            <div class="status-badge">${badgeText}</div>
-          </div>
-          <div class="card-content" style="position: relative;">
-            <button class="remove-btn" data-id="${item.docId}" style="position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-              <i class="fa-solid fa-trash" style="font-size: 0.8rem;"></i>
-            </button>
-            <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
-            <p class="card-episode" id="${epId}">${epPlaceholder}</p>
-            <div class="countdown-box" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
-              ${countdownInner}
-            </div>
-          </div>
-        `;
+                card.innerHTML = `
+                    <div class="card-image" style="${bgStyle}">
+                        <div class="status-badge">${badgeText}</div>
+                    </div>
+                    <div class="card-content" style="position: relative;">
+                        <button class="remove-btn" data-id="${item.docId}" style="position: absolute; top: 10px; right: 10px; background: rgba(255,77,77,0.2); color: #ff4d4d; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-trash" style="font-size: 0.8rem;"></i>
+                        </button>
+                        <h3 class="card-title" style="padding-right: 25px;">${item.title}</h3>
+                        <p class="card-episode" id="${epId}">${epPlaceholder}</p>
+                        <div class="countdown-box" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
+                            ${countdownInner}
+                        </div>
+                    </div>
+                `;
 
         // If currently airing and we have a malId, fetch live aired episode count
         if (item.status === 'Currently Airing' && item.malId) {
@@ -350,13 +351,94 @@ function initApp() {
     }
 }
 
+// ── Notifications Helper ────────────────────────────────────
+async function sendNotification(title, options = {}) {
+    console.log("Attempting to send notification:", title, options);
+    
+    // Vibrate immediately when notification is sent
+    if ("vibrate" in navigator) {
+        try {
+            navigator.vibrate([100, 50, 100]);
+        } catch (e) { /* ignore if vibration fails */ }
+    }
+    
+    if (!("Notification" in window)) {
+        console.warn("Notifications not supported");
+        return;
+    }
+    
+    if (Notification.permission !== "granted") {
+        console.warn("Notification permission not granted. Current permission:", Notification.permission);
+        return;
+    }
+    
+    try {
+        const notificationOptions = {
+            icon: './assets/images/logo.png',
+            badge: './assets/images/logo.png',
+            tag: options.tag || 'default-notification',
+            requireInteraction: options.requireInteraction || false,
+            ...options
+        };
+
+        // Try Service Worker first (best for PWA / background)
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            if (registration && registration.showNotification) {
+                await registration.showNotification(title, notificationOptions);
+                console.log("Notification sent via Service Worker");
+                return;
+            }
+        }
+        
+        // Fallback to basic Notification API
+        new Notification(title, notificationOptions);
+        console.log("Notification sent successfully via basic API");
+    } catch (err) {
+        console.error("Failed to send notification:", err.message);
+    }
+}
+
 function startCountdowns() {
+  const notifiedIds = new Set(); // Prevent spamming notifications for the same event
+  
   setInterval(() => {
     const now = new Date().getTime();
     const timers = document.querySelectorAll('.cd-timer');
+    console.log(`[Timer Update] Found ${timers.length} active timers at ${new Date().toLocaleTimeString()}`);
+    
     timers.forEach(el => {
         const targetTime = parseInt(el.getAttribute('data-time'), 10);
+        const animeId = el.getAttribute('data-anime-id');
+        const animeTitle = el.getAttribute('data-anime-title') || "An anime";
+        
+        // Validate data
+        if (isNaN(targetTime)) {
+            console.warn(`[Timer Error] Invalid data-time for ${animeTitle}:`, el.getAttribute('data-time'));
+            el.innerText = "ERROR";
+            return;
+        }
+        
         const distance = targetTime - now;
+        
+        // Notification Logic: If distance just crossed zero
+        if (distance <= 0 && distance > -5000) {
+            // Use unique anime ID for deduplication, fallback to title if no ID
+            const notifKey = animeId || animeTitle;
+            
+            if (!notifiedIds.has(notifKey)) {
+                console.log(`[Notification] Sending for ${animeTitle} (ID: ${notifKey})`);
+                sendNotification(`Episode Released!`, {
+                    body: `${animeTitle} is airing right now.`,
+                    tag: 'episode-drop-' + notifKey,
+                    requireInteraction: false
+                });
+                notifiedIds.add(notifKey);
+            } else {
+                console.log(`[Notification] Already notified for ${notifKey}, skipping`);
+            }
+        }
+        
         el.innerText = formatCountdown(distance);
     });
   }, 1000);
@@ -365,27 +447,231 @@ function startCountdowns() {
 document.addEventListener('DOMContentLoaded', () => {
     startCountdowns();
     
+    // ── PWA Install Handler ────────────────────────────────────
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) {
+            installBtn.style.display = 'flex';
+            installBtn.style.alignItems = 'center';
+            installBtn.style.justifyContent = 'center';
+        }
+        console.log('PWA install prompt ready');
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert('PWA installation is not available in your browser.');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response: ${outcome}`);
+            deferredPrompt = null;
+            if (installBtn) installBtn.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
+        deferredPrompt = null;
+        if (installBtn) installBtn.style.display = 'none';
+    });
+    
     const notifBtn = document.getElementById('demo-notification-btn');
     if (notifBtn) {
-        notifBtn.addEventListener('click', () => {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification("Notifications Enabled!", {
-                            body: "You will be alerted when new chapters drop.",
-                            icon: 'assets/images/logo.png' 
-                        });
-                        if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-                    }
+        // Update button text if already granted
+        if (Notification.permission === 'granted') {
+            notifBtn.innerHTML = '<i class="fas fa-check"></i> Notifications Active';
+            notifBtn.classList.remove('btn-primary');
+            notifBtn.style.opacity = '0.7';
+        }
+
+        notifBtn.addEventListener('click', async () => {
+            if (!('Notification' in window)) {
+                alert("This browser does not support desktop notification");
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                notifBtn.innerHTML = '<i class="fas fa-check"></i> Notifications Active';
+                notifBtn.classList.remove('btn-primary');
+                notifBtn.style.opacity = '0.7';
+                notifBtn.style.cursor = 'default';
+                notifBtn.disabled = true;
+                sendNotification("Notifications Enabled!", {
+                    body: "We'll let you know when new episodes air.",
                 });
+            } else {
+                alert("Notifications were blocked. Please enable them in your browser settings to receive alerts.");
+            }
+        });
+    }
+
+    const testNotifBtn = document.getElementById('test-notification-btn');
+    if (testNotifBtn) {
+        testNotifBtn.addEventListener('click', () => {
+            console.log("Test button clicked. Permission:", Notification.permission);
+            if (Notification.permission !== 'granted') {
+                alert("Please click 'Enable Notifications' first and ALLOW them in the popup!");
+                return;
+            }
+            
+            // Create a big visual overlay for the countdown
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(8, 9, 13, 0.9); backdrop-filter: blur(10px);
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                z-index: 9999; color: #fff; font-family: 'Outfit', sans-serif;
+            `;
+            overlay.innerHTML = `
+                <div style="font-size: 1.2rem; color: var(--accent-secondary); margin-bottom: 1rem; font-weight: 600;">TESTING NOTIFICATION</div>
+                <div id="test-cd-num" style="font-size: 8rem; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">3</div>
+                <div style="margin-top: 2rem; color: var(--text-secondary);">Minimize your browser now to test background alerts!</div>
+                <button id="cancel-test" style="margin-top: 3rem; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: #fff; padding: 0.8rem 2rem; border-radius: 999px; cursor: pointer;">Cancel</button>
+            `;
+            document.body.appendChild(overlay);
+
+            let seconds = 3;
+            const cdNum = overlay.querySelector('#test-cd-num');
+            
+            const timer = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    cdNum.innerText = seconds;
+                    if ("vibrate" in navigator) navigator.vibrate(50);
+                } else {
+                    clearInterval(timer);
+                    overlay.remove();
+                    sendNotification("It Works! 🎉", {
+                        body: "This is how you'll be notified when your anime episodes drop.",
+                        tag: 'test-notification'
+                    });
+                }
+            }, 1000);
+
+            overlay.querySelector('#cancel-test').onclick = () => {
+                clearInterval(timer);
+                overlay.remove();
+            };
+        });
+    }
+
+    const menuToggle = document.getElementById('burger-menu');
+    const navbar = document.querySelector('.navbar');
+    if (menuToggle && navbar) {
+        menuToggle.addEventListener('click', () => {
+            navbar.classList.toggle('nav-active');
+            document.body.classList.toggle('menu-open');
+        });
+
+        // Close menu when clicking a link
+        document.querySelectorAll('.main-nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                navbar.classList.remove('nav-active');
+                document.body.classList.remove('menu-open');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navbar.contains(e.target) && navbar.classList.contains('nav-active')) {
+                navbar.classList.remove('nav-active');
+                document.body.classList.remove('menu-open');
             }
         });
     }
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                // Check for an updated worker immediately and periodically.
+                registration.update();
+                setInterval(() => registration.update(), 60 * 1000);
+
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (!newWorker) return;
+
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Ask waiting worker to activate immediately.
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
+                });
+
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }).catch(err => console.log('SW failed:', err));
+        });
+        // Listen for vibration messages from service worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'NOTIFICATION_CLICKED' && event.data.vibrate) {
+                if ('vibrate' in navigator) {
+                    try {
+                        navigator.vibrate(event.data.vibrate);
+                    } catch (e) { console.log('Vibration failed:', e); }
+                }
+            }
         });
     }
 });
+
+// Hard reset helper: unregister service workers, clear caches/localStorage/indexedDB, then reload with cache-bust
+window.hardResetSite = async function hardResetSite() {
+    if (!confirm('Hard reset site? This will clear caches, service workers, localStorage and IndexedDB, then reload. Continue?')) return;
+
+    try {
+        console.log('Hard reset: starting');
+
+        // Unregister service workers
+        if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) {
+                try { await r.unregister(); console.log('Unregistered SW'); } catch (e) { console.warn('SW unregister failed', e); }
+            }
+        }
+
+        // Delete caches
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            for (const k of keys) {
+                try { await caches.delete(k); console.log('Deleted cache', k); } catch (e) { console.warn('Cache delete failed', k, e); }
+            }
+        }
+
+        // Clear storages
+        try { localStorage.clear(); sessionStorage.clear(); console.log('Cleared storage'); } catch (e) { console.warn('Storage clear failed', e); }
+
+        // Delete all IndexedDB databases (if supported)
+        try {
+            if (indexedDB && indexedDB.databases) {
+                const dbs = await indexedDB.databases();
+                for (const db of dbs) {
+                    if (db.name) {
+                        try { indexedDB.deleteDatabase(db.name); console.log('Deleted IndexedDB', db.name); } catch (e) { console.warn('IndexedDB delete failed', db.name, e); }
+                    }
+                }
+            }
+        } catch (e) { console.warn('IndexedDB enumeration failed', e); }
+
+        // Force reload with cache-bust
+        const url = window.location.pathname + (window.location.search ? window.location.search + '&' : '?') + 'cachebust=' + Date.now();
+        window.location.replace(url);
+    } catch (err) {
+        console.error('Hard reset failed', err);
+        alert('Hard reset failed: ' + (err && err.message ? err.message : String(err)));
+    }
+}
 

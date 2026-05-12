@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Anime Tracker | User Profile</title>
     <meta name="description" content="Manage your Anime Tracker profile and sync your library.">
     <meta name="theme-color" content="#8a2be2">
@@ -30,7 +30,11 @@
                 <a href="browse.html"><i class="fas fa-compass"></i> <span>Browse</span></a>
                 <a href="profile.html" class="active"><i class="fas fa-user"></i> <span>Profile</span></a>
             </nav>
-            <button class="menu-toggle" aria-label="Toggle menu">
+            <!-- PWA Install Button -->
+            <button id="installBtn" class="menu-toggle" aria-label="Install as PWA" title="Install as PWA" style="display:none;background:var(--accent-gradient);border:none;">
+                <i class="fas fa-download"></i>
+            </button>
+            <button id="burger-menu" class="menu-toggle" aria-label="Toggle menu">
                 <i class="fas fa-bars"></i>
             </button>
         </div>

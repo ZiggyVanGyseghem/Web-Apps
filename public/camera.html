@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Anime Tracker | Camera Scanner</title>
     <meta name="description" content="Scan barcodes to add items to your watchlist.">
     <meta name="theme-color" content="#8a2be2">
@@ -28,10 +28,14 @@
                 <a href="index.html"><i class="fas fa-home"></i> <span>Home</span></a>
                 <a href="library.html"><i class="fas fa-book-open"></i> <span>My Library</span></a>
                 <a href="camera.html" class="active"><i class="fas fa-camera"></i> <span>Scanner</span></a>
-                <a href="browse.html"><i class="fas fa-compass"></i> <span>Browse</span></a>
-                <a href="profile.html"><i class="fas fa-user"></i> <span>Profile</span></a>
+                <a href="#"><i class="fas fa-compass"></i> <span>Browse</span></a>
+                <a href="#"><i class="fas fa-user"></i> <span>Profile</span></a>
             </nav>
-            <button class="menu-toggle" aria-label="Toggle menu">
+            <!-- PWA Install Button -->
+            <button id="installBtn" class="menu-toggle" aria-label="Install as PWA" title="Install as PWA" style="display:none;background:var(--accent-gradient);border:none;">
+                <i class="fas fa-download"></i>
+            </button>
+            <button id="burger-menu" class="menu-toggle" aria-label="Toggle menu">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -39,60 +43,56 @@
 
     <main class="container main-content" style="padding-top: 1rem;">
         <div class="scanner-container">
-            <section class="hero"
-                style="margin-top: 0; padding: 2.5rem 1.5rem; background: none; border: none; backdrop-filter: none;">
+            <section class="hero" style="margin-top: 0; padding: 2.5rem 1.5rem; background: none; border: none; backdrop-filter: none;">
                 <h1>Smart <span class="highlight">Scanner</span></h1>
                 <p>Scan any manga or book barcode to instantly add it to your collection.</p>
-
+                
                 <div style="margin: 1rem 0; display: flex; justify-content: center; gap: 1rem;">
                     <button class="btn btn-primary" id="startButton">
                         <i class="fas fa-camera"></i> Start Scanning
                     </button>
-                    <button class="btn" id="stopButton"
-                        style="background: var(--glass-bg); border: 1px solid var(--glass-border);">
+                    <button class="btn" id="stopButton" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">
                         <i class="fas fa-stop"></i> Stop
                     </button>
                 </div>
-
+                
                 <div id="errorMessage" style="color: #ff4d4d; margin-top: 10px; font-weight: 600;"></div>
+                <!-- Visible runtime debug panel (temporary) -->
+                <div style="display:flex;gap:0.5rem;align-items:center;justify-content:center;margin-top:8px;">
+                    <div id="debugStatus" style="color:var(--text-secondary);font-size:0.9rem;font-weight:600">Debug: idle</div>
+                    <button id="hardResetBtn" class="btn" style="padding:0.4rem 0.8rem;margin-left:6px;font-size:0.85rem;">Hard Reset Site</button>
+                </div>
             </section>
 
             <div id="reader-wrapper" style="position: relative; max-width: 700px; margin: 0 auto;">
                 <div id="reader"></div>
                 <!-- Immersive Scanner Overlay -->
-                <div id="scanner-overlay"
-                    style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
-                    <div
-                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 60%; border: 2px solid var(--accent-secondary); border-radius: 20px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);">
-                        <div
-                            style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-secondary); box-shadow: 0 0 15px var(--accent-secondary); animation: scan-line 2s ease-in-out infinite;">
-                        </div>
+                <div id="scanner-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 82%; height: 40%; border-radius: 18px; background: rgba(0,0,0,0.05); border: 1px solid rgba(76,201,240,0.24); box-shadow: inset 0 0 0 1px rgba(76,201,240,0.08);">
+                        <div style="position: absolute; top: -1px; left: -1px; width: 18px; height: 18px; border-top: 3px solid rgba(76,201,240,0.9); border-left: 3px solid rgba(76,201,240,0.9); border-top-left-radius: 10px;"></div>
+                        <div style="position: absolute; top: -1px; right: -1px; width: 18px; height: 18px; border-top: 3px solid rgba(76,201,240,0.9); border-right: 3px solid rgba(76,201,240,0.9); border-top-right-radius: 10px;"></div>
+                        <div style="position: absolute; bottom: -1px; left: -1px; width: 18px; height: 18px; border-bottom: 3px solid rgba(76,201,240,0.9); border-left: 3px solid rgba(76,201,240,0.9); border-bottom-left-radius: 10px;"></div>
+                        <div style="position: absolute; bottom: -1px; right: -1px; width: 18px; height: 18px; border-bottom: 3px solid rgba(76,201,240,0.9); border-right: 3px solid rgba(76,201,240,0.9); border-bottom-right-radius: 10px;"></div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(76,201,240,0.85); box-shadow: 0 0 10px rgba(76,201,240,0.4); animation: scan-line 2s ease-in-out infinite;"></div>
+                        <div style="position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); color: var(--text-secondary); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.35px; white-space: nowrap;">Center the ISBN barcode here</div>
                     </div>
                 </div>
             </div>
 
-            <div
-                style="background: var(--panel-bg); backdrop-filter: blur(10px); padding: 2rem; border-radius: 24px; border: 1px solid var(--glass-border); margin: 2rem auto; max-width: 700px; box-shadow: var(--shadow-lg);">
-                <div
-                    style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
-                    <span
-                        style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Live
-                        Result</span>
+            <div style="background: var(--panel-bg); backdrop-filter: blur(10px); padding: 2rem; border-radius: 24px; border: 1px solid var(--glass-border); margin: 2rem auto; max-width: 700px; box-shadow: var(--shadow-lg);">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+                    <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Live Result</span>
                     <div style="height: 1px; flex-grow: 1; background: var(--glass-border);"></div>
                 </div>
-                <span id="scanResult"
-                    style="color: var(--accent-secondary); font-family: monospace; font-size: 1.5rem; font-weight: 800; display: block; margin-bottom: 1rem;">Waiting
-                    for scan...</span>
+                <span id="scanResult" style="color: var(--accent-secondary); font-family: monospace; font-size: 1.5rem; font-weight: 800; display: block; margin-bottom: 1rem;">Waiting for scan...</span>
                 <div id="bookDetails"></div>
             </div>
 
             <!-- SERIES CONFIRMATION MODAL -->
-            <div id="seriesModal"
-                style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem;">
+            <div id="seriesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem;">
                 <div class="auth-container" style="margin: 0; width: 100%; max-width: 450px;">
                     <h2 style="margin-bottom: 0.5rem;">Save to Library</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Confirm the details
-                        before adding.</p>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Confirm the details before adding.</p>
 
                     <div class="form-group">
                         <label>Series Name</label>
@@ -101,8 +101,7 @@
 
                     <div class="form-group">
                         <label>Item Type</label>
-                        <select id="modalItemType"
-                            style="width: 100%; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); font-family: inherit;">
+                        <select id="modalItemType" style="width: 100%; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); font-family: inherit;">
                             <option value="manga">Manga</option>
                             <option value="novel">Light Novel</option>
                             <option value="book">Standard Book</option>
@@ -119,243 +118,356 @@
                         <button id="modalSaveBtn" class="btn btn-primary" style="flex: 2;">
                             <i class="fas fa-plus"></i> Add to Library
                         </button>
-                        <button id="modalCancelBtn" class="btn"
-                            style="flex: 1; background: var(--glass-bg);">Cancel</button>
+                        <button id="modalCancelBtn" class="btn" style="flex: 1; background: var(--glass-bg);">Cancel</button>
                     </div>
                 </div>
             </div>
+
         </div>
     </main>
 
     <style>
         @keyframes scan-line {
-            0% {
-                top: 0;
-                opacity: 0;
-            }
-
-            10% {
-                opacity: 1;
-            }
-
-            90% {
-                opacity: 1;
-            }
-
-            100% {
-                top: 100%;
-                opacity: 0;
-            }
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
         }
     </style>
 
     <script>
-        const startBtn = document.getElementById('startButton');
-        const stopBtn = document.getElementById('stopButton');
-        const errorDisplay = document.getElementById('errorMessage');
-        const scanResult = document.getElementById('scanResult');
-        const bookDetails = document.getElementById('bookDetails');
-        const scannerOverlay = document.getElementById('scanner-overlay');
+                        const startBtn = document.getElementById('startButton');
+                        const stopBtn = document.getElementById('stopButton');
+                        const errorDisplay = document.getElementById('errorMessage');
+                        const scanResult = document.getElementById('scanResult');
+                        const bookDetails = document.getElementById('bookDetails');
+                        const scannerOverlay = document.getElementById('scanner-overlay');
 
-        // Modal Elements
-        const seriesModal = document.getElementById('seriesModal');
-        const modalSeriesName = document.getElementById('modalSeriesName');
-        const modalItemType = document.getElementById('modalItemType');
-        const modalVolumeName = document.getElementById('modalVolumeName');
-        const modalSaveBtn = document.getElementById('modalSaveBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
+                        const seriesModal = document.getElementById('seriesModal');
+                        const modalSeriesName = document.getElementById('modalSeriesName');
+                        const modalItemType = document.getElementById('modalItemType');
+                        const modalVolumeName = document.getElementById('modalVolumeName');
+                        const modalSaveBtn = document.getElementById('modalSaveBtn');
+                        const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-        let html5QrCode = null;
-        let lastScannedCode = null;
-        let currentScannedItem = null;
+                        let html5QrCode = null;
+                        let currentScannedItem = null;
 
-        // Audio Beep for iOS/Samsung cross-compatibility
-        function playBeep() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
+                        function setDebug(msg) {
+                            try {
+                                const el = document.getElementById('debugStatus');
+                                if (el) el.innerText = `Debug: ${msg}`;
+                            } catch (e) { /* ignore */ }
+                        }
+                        setDebug('script-loaded');
+                        if (typeof Html5Qrcode === 'undefined') {
+                            setDebug('Html5Qrcode-missing');
+                        }
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+                        function normalizeBarcode(input) {
+                            return String(input || '').replace(/\D/g, '');
+                        }
 
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz beep
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // 10% volume
-
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.15); // play for 150ms
-            } catch (e) { console.log('Audio error:', e); }
-        }
-
-        function guessSeriesName(title) {
-            let guess = title.split(/Vol|Volume|Book|Part|Chapter|Issue|#|-/i)[0].trim();
-            if (guess.length === 0) guess = title;
-            return guess;
-        }
-
-        startBtn.addEventListener('click', () => {
-            errorDisplay.innerText = '';
-            scanResult.innerText = "Scanning...";
-            bookDetails.innerHTML = '';
-            lastScannedCode = null;
-
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("reader");
-            }
-
-            scannerOverlay.style.display = "block";
-
-            html5QrCode.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E
-                    ]
-                },
-                (decodedText, decodedResult) => {
-                    if (lastScannedCode === decodedText) return;
-                    lastScannedCode = decodedText;
-
-                    scanResult.innerText = decodedText;
-
-                    if ("vibrate" in navigator) navigator.vibrate(50);
-                    playBeep();
-
-                    bookDetails.innerHTML = `
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem;">
-                            <div class="spinner" style="width: 30px; height: 30px; border: 3px solid var(--glass-border); border-top-color: var(--accent-secondary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                            <p style="color: var(--text-secondary);">Searching OpenLibrary Database...</p>
-                        </div>
-                    `;
-
-                    fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${decodedText}&format=json&jscmd=data`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const bookKey = `ISBN:${decodedText}`;
-                            if (data[bookKey]) {
-                                const bookInfo = data[bookKey];
-                                const title = bookInfo.title || 'Unknown Title';
-                                const authors = bookInfo.authors ? bookInfo.authors.map(a => a.name).join(', ') : 'Unknown Author';
-                                const cover = bookInfo.cover ? bookInfo.cover.medium : '';
-                                const categories = bookInfo.subjects ? bookInfo.subjects[0].name : 'Category not listed';
-
-                                let infoHtml = `
-                                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--glass-border); text-align: center;">
-                                        <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${title}</h3>
-                                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">By ${authors}</p>
-                                        <p style="font-size: 0.85rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2rem;">${categories}</p>
-                                        <button class="btn btn-primary" id="addWatchlistBtn">
-                                            <i class="fas fa-plus"></i> Add to Library
-                                        </button>
-                                    </div>
-                                `;
-
-                                if (cover) {
-                                    infoHtml = `
-                                        <div style="position: relative; display: inline-block; margin-bottom: 1.5rem;">
-                                            <img src="${cover}" alt="Book Cover" style="max-height: 200px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--glass-border);">
-                                        </div>
-                                    ` + infoHtml;
-                                }
-
-                                bookDetails.innerHTML = infoHtml;
-
-                                document.getElementById('addWatchlistBtn').addEventListener('click', () => {
-                                    if (html5QrCode.getState() === 2) html5QrCode.pause();
-
-                                    currentScannedItem = {
-                                        volumeId: decodedText,
-                                        volumeTitle: title,
-                                        author: authors,
-                                        category: categories,
-                                        cover: cover
-                                    };
-
-                                    modalSeriesName.value = guessSeriesName(title);
-                                    modalVolumeName.value = title;
-                                    seriesModal.style.display = "flex";
-                                });
-                            } else {
-                                bookDetails.innerHTML = "<p style='color: #ffb703; font-weight: 600; margin-top: 1rem;'>No book found in OpenLibrary for this barcode.</p>";
-                                lastScannedCode = null;
+                        function isValidIsbn13(code) {
+                            if (!/^97[89]\d{10}$/.test(code)) return false;
+                            let sum = 0;
+                            for (let i = 0; i < 12; i++) {
+                                const digit = parseInt(code[i], 10);
+                                sum += i % 2 === 0 ? digit : digit * 3;
                             }
-                        })
-                        .catch(err => {
-                            console.error("API Fetch Error:", err);
-                            bookDetails.innerHTML = "<p style='color: #ff4d4d; font-weight: 600; margin-top: 1rem;'>Failed to connect to database.</p>";
-                            lastScannedCode = null;
+                            const check = (10 - (sum % 10)) % 10;
+                            return check === parseInt(code[12], 10);
+                        }
+
+                        // Convert ISBN-10 (with possible trailing X) to ISBN-13
+                        function isbn10ToIsbn13(isbn10) {
+                            const cleaned = String(isbn10 || '').replace(/[^0-9Xx]/g, '');
+                            if (!/^[0-9]{9}[0-9Xx]$/.test(cleaned)) return null;
+                            const core = cleaned.substring(0, 9);
+                            const prefixed = '978' + core; // ISBN-13 prefix for ISBN-10
+                            // compute checksum
+                            let sum = 0;
+                            for (let i = 0; i < 12; i++) {
+                                const digit = parseInt(prefixed[i], 10);
+                                sum += i % 2 === 0 ? digit : digit * 3;
+                            }
+                            const check = (10 - (sum % 10)) % 10;
+                            return prefixed + String(check);
+                        }
+
+                        // Try to normalize any barcode string into a valid ISBN-13
+                        function extractIsbn13(raw) {
+                            if (!raw) return null;
+                            const trimmed = String(raw).trim();
+
+                            // If contains ISBN-10 pattern (may include X)
+                            const possibleIsbn10 = trimmed.replace(/[^0-9Xx]/g, '');
+                            if (/^[0-9]{9}[0-9Xx]$/.test(possibleIsbn10)) {
+                                const conv = isbn10ToIsbn13(possibleIsbn10);
+                                if (conv && isValidIsbn13(conv)) return conv;
+                            }
+
+                            // Otherwise extract digits only
+                            const digits = trimmed.replace(/\D/g, '');
+                            if (digits.length === 13 && isValidIsbn13(digits)) return digits;
+
+                            // Sometimes scanners return UPC-A (12 digits) or EAN-13 without ISBN prefix
+                            // We only accept valid ISBN-13 (starting with 978/979). If we get 12 digits, try prefixing '0' -> check
+                            if (digits.length === 12) {
+                                const with0 = '0' + digits;
+                                if (isValidIsbn13(with0)) return with0;
+                            }
+
+                            return null;
+                        }
+
+                        function guessSeriesName(title) {
+                            let guess = title.split(/Vol|Volume|Book|Part|Chapter|Issue|#|-/i)[0].trim();
+                            if (guess.length === 0) guess = title;
+                            return guess;
+                        }
+
+                        async function fetchBookMetadata(isbn) {
+                            const openLibraryResponse = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+                            const openLibraryData = await openLibraryResponse.json();
+                            const openLibraryKey = `ISBN:${isbn}`;
+
+                            if (openLibraryData[openLibraryKey]) {
+                                const bookInfo = openLibraryData[openLibraryKey];
+                                return {
+                                    title: bookInfo.title || 'Unknown Title',
+                                    authors: bookInfo.authors ? bookInfo.authors.map(a => a.name).join(', ') : 'Unknown Author',
+                                    cover: bookInfo.cover ? bookInfo.cover.medium : '',
+                                    categories: bookInfo.subjects ? bookInfo.subjects[0].name : 'Category not listed',
+                                    source: 'OpenLibrary'
+                                };
+                            }
+
+                            const googleBooksResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+                            const googleBooksData = await googleBooksResponse.json();
+                            const googleItem = googleBooksData.items && googleBooksData.items.length > 0 ? googleBooksData.items[0] : null;
+
+                            if (googleItem && googleItem.volumeInfo) {
+                                const volumeInfo = googleItem.volumeInfo;
+                                return {
+                                    title: volumeInfo.title || 'Unknown Title',
+                                    authors: Array.isArray(volumeInfo.authors) ? volumeInfo.authors.join(', ') : 'Unknown Author',
+                                    cover: volumeInfo.imageLinks ? (volumeInfo.imageLinks.thumbnail || volumeInfo.imageLinks.smallThumbnail || '') : '',
+                                    categories: Array.isArray(volumeInfo.categories) && volumeInfo.categories.length > 0 ? volumeInfo.categories[0] : 'Category not listed',
+                                    source: 'Google Books'
+                                };
+                            }
+
+                            return null;
+                        }
+
+                        function handleDetectedCode(decodedText) {
+                            setDebug('code-detected');
+                            const extracted = extractIsbn13(decodedText);
+                            if (!extracted) {
+                                scanResult.innerText = 'Detected code is not a valid ISBN (ISBN-10/13 supported).';
+                                setDebug('invalid-isbn');
+                                return;
+                            }
+
+                            scanResult.innerText = extracted;
+                            setDebug('valid-isbn13');
+                            if ('vibrate' in navigator) navigator.vibrate(50);
+
+                            bookDetails.innerHTML = `
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem;">
+                                    <div class="spinner" style="width: 30px; height: 30px; border: 3px solid var(--glass-border); border-top-color: var(--accent-secondary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                    <p style="color: var(--text-secondary);">Searching book databases...</p>
+                                </div>
+                            `;
+
+                            fetchBookMetadata(extracted)
+                                .then(meta => {
+                                    setDebug(meta ? 'metadata-found' : 'metadata-not-found');
+                                    if (!meta) {
+                                        bookDetails.innerHTML = "<p style='color: #ffb703; font-weight: 600; margin-top: 1rem;'>No book found in OpenLibrary or Google Books for this ISBN.</p>";
+                                        return;
+                                    }
+
+                                    let infoHtml = `
+                                        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--glass-border); text-align: center;">
+                                            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${meta.title}</h3>
+                                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">By ${meta.authors}</p>
+                                            <p style="font-size: 0.85rem; color: var(--accent-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">${meta.categories}</p>
+                                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2rem;">Source: ${meta.source}</p>
+                                            <button class="btn btn-primary" id="addWatchlistBtn">
+                                                <i class="fas fa-plus"></i> Add to Library
+                                            </button>
+                                        </div>
+                                    `;
+
+                                    if (meta.cover) {
+                                        infoHtml = `
+                                            <div style="position: relative; display: inline-block; margin-bottom: 1.5rem;">
+                                                <img src="${meta.cover}" alt="Book Cover" style="max-height: 200px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--glass-border);">
+                                            </div>
+                                        ` + infoHtml;
+                                    }
+
+                                    bookDetails.innerHTML = infoHtml;
+
+                                    const addWatchlistBtn = document.getElementById('addWatchlistBtn');
+                                    if (addWatchlistBtn) {
+                                        addWatchlistBtn.addEventListener('click', () => {
+                                            currentScannedItem = {
+                                                volumeId: extracted,
+                                                volumeTitle: meta.title,
+                                                author: meta.authors,
+                                                category: meta.categories,
+                                                cover: meta.cover
+                                            };
+
+                                            modalSeriesName.value = guessSeriesName(meta.title);
+                                            modalVolumeName.value = meta.title;
+                                            seriesModal.style.display = 'flex';
+                                        });
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error('API Fetch Error:', err);
+                                    bookDetails.innerHTML = "<p style='color: #ff4d4d; font-weight: 600; margin-top: 1rem;'>Failed to connect to metadata sources.</p>";
+                                });
+                        }
+
+                        function startCameraScan() {
+                            errorDisplay.innerText = '';
+                            scanResult.innerText = 'Scanning...';
+                            bookDetails.innerHTML = '';
+
+                            if (!html5QrCode) {
+                                try {
+                                    html5QrCode = new Html5Qrcode('reader');
+                                    setDebug('html5qr-created');
+                                } catch (e) {
+                                    console.error('Html5Qrcode create failed', e);
+                                    setDebug('html5qr-create-failed');
+                                    errorDisplay.innerText = 'Scanner initialization failed.';
+                                    return;
+                                }
+                            }
+
+                            scannerOverlay.style.display = 'block';
+
+                            setDebug('starting-scanner');
+
+                            // Dynamically size the qrbox to match the visible reader area
+                            const readerEl = document.getElementById('reader');
+                            const rect = readerEl.getBoundingClientRect();
+                            const computedQrBox = {
+                                width: Math.max(200, Math.floor(rect.width * 0.82)),
+                                height: Math.max(120, Math.floor(rect.height * 0.4))
+                            };
+
+                            html5QrCode.start(
+                                { facingMode: 'environment' },
+                                {
+                                    fps: 12,
+                                    qrbox: computedQrBox,
+                                    formatsToSupport: [
+                                        Html5QrcodeSupportedFormats.EAN_13,
+                                        Html5QrcodeSupportedFormats.EAN_8,
+                                        Html5QrcodeSupportedFormats.UPC_A,
+                                        Html5QrcodeSupportedFormats.UPC_E,
+                                        Html5QrcodeSupportedFormats.CODE_128,
+                                        Html5QrcodeSupportedFormats.CODE_39,
+                                        Html5QrcodeSupportedFormats.ITF,
+                                        Html5QrcodeSupportedFormats.CODABAR
+                                    ]
+                                },
+                                (decodedText) => {
+                                    handleDetectedCode(decodedText);
+                                },
+                                () => {}
+                            ).catch((err) => {
+                                console.error('Camera start failed:', err);
+                                errorDisplay.innerText = 'Failed to start camera: ' + err;
+                                scannerOverlay.style.display = 'none';
+                                setDebug('start-failed: ' + (err && err.message ? err.message : String(err)));
+                            });
+                        }
+
+                        startBtn.addEventListener('click', () => {
+                            startCameraScan();
                         });
-                },
-                (errorMessage) => { }
-            ).catch((err) => {
-                console.error("Camera start failed:", err);
-                errorDisplay.innerText = "Failed to start camera: " + err;
-                scannerOverlay.style.display = "none";
-            });
-        });
 
-        stopBtn.addEventListener('click', () => {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    scanResult.innerText = "Stopped.";
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                    lastScannedCode = null;
-                    scannerOverlay.style.display = "none";
-                }).catch((err) => {
-                    console.error("Failed to stop camera:", err);
-                });
-            }
-        });
+                        stopBtn.addEventListener('click', () => {
+                            if (html5QrCode) {
+                                html5QrCode.stop().then(() => {
+                                    scanResult.innerText = 'Stopped.';
+                                    html5QrCode.clear();
+                                    html5QrCode = null;
+                                    scannerOverlay.style.display = 'none';
+                                    setDebug('stopped');
+                                }).catch((err) => {
+                                    console.error('Failed to stop camera:', err);
+                                    setDebug('stop-failed');
+                                });
+                            }
+                        });
 
-        modalCancelBtn.addEventListener('click', () => {
-            seriesModal.style.display = "none";
-            if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
-        });
+                        modalCancelBtn.addEventListener('click', () => {
+                            seriesModal.style.display = 'none';
+                        });
 
-        modalSaveBtn.addEventListener('click', async () => {
-            if (!currentScannedItem) return;
+                        // Wire Hard Reset button (calls global function exposed by app.js)
+                        const hardResetBtn = document.getElementById('hardResetBtn');
+                        if (hardResetBtn) {
+                            hardResetBtn.addEventListener('click', async () => {
+                                setDebug('hard-reset-initiated');
+                                try {
+                                    if (typeof window.hardResetSite === 'function') {
+                                        await window.hardResetSite();
+                                    } else {
+                                        alert('Reset helper not available.');
+                                        setDebug('hard-reset-missing');
+                                    }
+                                } catch (e) {
+                                    console.error('Hard reset call failed', e);
+                                    setDebug('hard-reset-failed');
+                                }
+                            });
+                        }
 
-            modalSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            modalSaveBtn.disabled = true;
+                        modalSaveBtn.addEventListener('click', async () => {
+                            if (!currentScannedItem) return;
 
-            currentScannedItem.seriesName = modalSeriesName.value.trim() || currentScannedItem.volumeTitle;
-            currentScannedItem.type = modalItemType.value;
+                            modalSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                            modalSaveBtn.disabled = true;
 
-            const saved = await window.saveToWatchlist(currentScannedItem);
+                            currentScannedItem.seriesName = modalSeriesName.value.trim() || currentScannedItem.volumeTitle;
+                            currentScannedItem.type = modalItemType.value;
 
-            const btn = document.getElementById('addWatchlistBtn');
-            if (saved) {
-                btn.innerHTML = '<i class="fas fa-check"></i> Added!';
-                btn.style.background = "linear-gradient(135deg, #00b894, #00cec9)";
-            } else {
-                btn.innerHTML = '<i class="fas fa-info-circle"></i> Already in Library';
-                btn.style.background = "var(--glass-bg)";
-            }
+                            const saved = await window.saveToWatchlist(currentScannedItem);
 
-            seriesModal.style.display = "none";
-            modalSaveBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Library';
-            modalSaveBtn.disabled = false;
+                            const btn = document.getElementById('addWatchlistBtn');
+                            if (saved && btn) {
+                                btn.innerHTML = '<i class="fas fa-check"></i> Added!';
+                                btn.style.background = 'linear-gradient(135deg, #00b894, #00cec9)';
+                            } else if (btn) {
+                                btn.innerHTML = '<i class="fas fa-info-circle"></i> Already in Library';
+                                btn.style.background = 'var(--glass-bg)';
+                            }
 
-            if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
-        });
-    </script>
-    <style>
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
+                            seriesModal.style.display = 'none';
+                            modalSaveBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Library';
+                            modalSaveBtn.disabled = false;
 
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
-</body>
-
+                            if (html5QrCode) {
+                                html5QrCode.stop().then(() => {
+                                    html5QrCode.clear();
+                                    html5QrCode = null;
+                                    scannerOverlay.style.display = 'none';
+                                }).catch(() => {});
+                            }
+                        });
+                    </script>
+                    <style>
+                        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                    </style>
+                </body>
 </html>

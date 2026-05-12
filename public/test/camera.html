@@ -34,6 +34,66 @@
         const scanResult = document.getElementById('scanResult');
 
         let html5QrCode = null;
+        let nativeDetector = null;
+        let nativeDetectTimer = null;
+
+        function normalizeBarcode(input) {
+            return String(input || '').replace(/\D/g, '');
+        }
+
+        function isValidIsbn13(code) {
+            if (!/^97[89]\d{10}$/.test(code)) return false;
+            let sum = 0;
+            for (let i = 0; i < 12; i++) {
+                const digit = parseInt(code[i], 10);
+                sum += i % 2 === 0 ? digit : digit * 3;
+            }
+            const check = (10 - (sum % 10)) % 10;
+            return check === parseInt(code[12], 10);
+        }
+
+        function stopNativeAssist() {
+            if (nativeDetectTimer) {
+                clearInterval(nativeDetectTimer);
+                nativeDetectTimer = null;
+            }
+        }
+
+        async function startNativeAssist(onDetected) {
+            stopNativeAssist();
+            if (!('BarcodeDetector' in window)) return;
+
+            try {
+                if (!nativeDetector) {
+                    nativeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+                }
+            } catch (e) {
+                return;
+            }
+
+            nativeDetectTimer = setInterval(async () => {
+                const video = document.querySelector('#reader video');
+                if (!video || video.readyState < 2) return;
+
+                try {
+                    const results = await nativeDetector.detect(video);
+                    if (results && results.length > 0) {
+                        onDetected(results[0].rawValue || '');
+                    }
+                } catch (e) {}
+            }, 500);
+        }
+
+        function handleDetectedCode(decodedText) {
+            const normalized = normalizeBarcode(decodedText);
+            if (!isValidIsbn13(normalized)) {
+                scanResult.innerText = 'Detected code is not a valid ISBN-13.';
+                return;
+            }
+
+            scanResult.innerText = normalized;
+            if ("vibrate" in navigator) navigator.vibrate(50);
+        }
 
         startBtn.addEventListener('click', () => {
             errorDisplay.innerText = ''; // Reset error
@@ -48,20 +108,22 @@
             html5QrCode.start(
                 { facingMode: "environment" },
                 {
-                    fps: 10,    // Check 10 frames per second
-                    qrbox: { width: 250, height: 100 },  // Bounding box for barcodes (wide format is better for 1D barcodes like EAN)
+                    fps: 12,
+                    qrbox: { width: 320, height: 140 },
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.EAN_13,
                         Html5QrcodeSupportedFormats.EAN_8,
                         Html5QrcodeSupportedFormats.UPC_A,
                         Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.QR_CODE
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.ITF,
+                        Html5QrcodeSupportedFormats.CODABAR
                     ]
                 },
                 // Success callback
                 (decodedText, decodedResult) => {
-                    scanResult.innerText = decodedText;
-                    if ("vibrate" in navigator) navigator.vibrate(50); // Optional vibration feedback
+                    handleDetectedCode(decodedText);
                 },
                 // Error callback (ignoring as it fires continuously when no code is found)
                 (errorMessage) => {
@@ -70,6 +132,8 @@
             ).catch((err) => {
                 console.error("Camera start failed:", err);
                 errorDisplay.innerText = "Failed to start camera: " + err;
+            }).then(() => {
+                startNativeAssist(handleDetectedCode);
             });
         });
 
@@ -79,6 +143,7 @@
                     scanResult.innerText = "Stopped.";
                     html5QrCode.clear();
                     html5QrCode = null;
+                    stopNativeAssist();
                 }).catch((err) => {
                     console.error("Failed to stop camera:", err);
                 });
